@@ -1,0 +1,21 @@
+{
+  "title": "Show Originals",
+  "description": "Only show original posts and content",
+  "icon": {
+    "class_name": "ri-file-user-line",
+    "color": "white",
+    "background_color": "#467C65"
+  },
+  "preferences": {
+    "showOriginalReblogs": {
+      "type": "checkbox",
+      "label": "Show reblogs with added original content",
+      "default": true
+    },
+    "excludedBlogs": {
+      "type": "text",
+      "label": "Excluded blogs: ",
+      "default": ""
+    }
+  }
+}
