@@ -106,8 +106,8 @@ const constructRelativeTimeString = function (unixTime) {
   return relativeTimeFormat.format(-0, 'second');
 };
 
-const addPostTimestamps = async function () {
-  getPostElements({ excludeClass: 'xkit-timestamps-done' }).forEach(async postElement => {
+const addPostTimestamps = async function (allPostElements) {
+  getPostElements({ allPostElements, excludeClass: 'xkit-timestamps-done' }).forEach(async postElement => {
     const { id } = postElement.dataset;
 
     const { timestamp, postUrl } = await timelineObjectMemoized(id);
@@ -142,8 +142,8 @@ const removePostTimestamps = function () {
   $('.xkit-timestamps-done').removeClass('xkit-timestamps-done');
 };
 
-const addReblogTimestamps = async function () {
-  getPostElements({ excludeClass: 'xkit-reblog-timestamps-done' }).forEach(async postElement => {
+const addReblogTimestamps = async function (allPostElements) {
+  getPostElements({ allPostElements, excludeClass: 'xkit-reblog-timestamps-done' }).forEach(async postElement => {
     let { trail } = await timelineObjectMemoized(postElement.dataset.id);
     if (!trail.length) {
       return;

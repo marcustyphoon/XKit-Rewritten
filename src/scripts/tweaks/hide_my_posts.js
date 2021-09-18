@@ -9,9 +9,9 @@ const css = `.${hiddenClass} article { display: none; }`;
 
 let primaryBlogName;
 
-const processPosts = async function () {
+const processPosts = async function (allPostElements) {
   await exposeTimelines();
-  getPostElements({ excludeClass, timeline: /\/v2\/timeline\/dashboard/ }).forEach(async postElement => {
+  getPostElements({ allPostElements, excludeClass, timeline: /\/v2\/timeline\/dashboard/ }).forEach(async postElement => {
     const { canEdit, isSubmission, postAuthor } = await timelineObjectMemoized(postElement.dataset.id);
 
     if (canEdit && (isSubmission || postAuthor === primaryBlogName || postAuthor === undefined)) {

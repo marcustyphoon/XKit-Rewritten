@@ -10,10 +10,10 @@ const excludeClass = 'xkit-postblock-done';
 const hiddenClass = 'xkit-postblock-hidden';
 const storageKey = 'postblock.blockedPostRootIDs';
 
-const processPosts = async function () {
+const processPosts = async function (allPostElements) {
   const { [storageKey]: blockedPostRootIDs = [] } = await browser.storage.local.get(storageKey);
 
-  getPostElements({ excludeClass, includeFiltered: true }).forEach(async postElement => {
+  getPostElements({ allPostElements, excludeClass, includeFiltered: true }).forEach(async postElement => {
     const postID = postElement.dataset.id;
     const { rebloggedRootId } = await timelineObjectMemoized(postID);
 

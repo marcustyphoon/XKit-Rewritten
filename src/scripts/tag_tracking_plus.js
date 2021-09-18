@@ -12,7 +12,7 @@ let searchResultSelector;
 let tagTextSelector;
 let tagsYouFollowString;
 
-const processPosts = async function () {
+const processPosts = async function (allPostElements) {
   const { searchParams } = new URL(location);
   if (!location.pathname.startsWith('/tagged/') || searchParams.get('sort') === 'top') {
     return;
@@ -23,7 +23,7 @@ const processPosts = async function () {
   if (!following) { return; }
 
   const { [storageKey]: timestamps = {} } = await browser.storage.local.get(storageKey);
-  for (const postElement of getPostElements({ excludeClass, noPeepr: true, includeFiltered: true })) {
+  for (const postElement of getPostElements({ allPostElements, excludeClass, noPeepr: true, includeFiltered: true })) {
     const { timestamp } = await timelineObjectMemoized(postElement.dataset.id);
     const savedTimestamp = timestamps[currentTag] || 0;
 

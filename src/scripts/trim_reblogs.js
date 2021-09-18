@@ -105,8 +105,8 @@ const onButtonClicked = async function ({ currentTarget }) {
   });
 };
 
-const processPosts = async function () {
-  getPostElements({ excludeClass }).forEach(async postElement => {
+const processPosts = async function (allPostElements) {
+  getPostElements({ allPostElements, excludeClass }).forEach(async postElement => {
     const editButton = postElement.querySelector('footer a[href*="/edit/"]');
     if (!editButton) { return; }
 

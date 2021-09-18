@@ -14,10 +14,10 @@ let colourSourceTags;
 
 const excludeClass = 'xkit-painter-done';
 
-const paint = async function () {
+const paint = async function (allPostElements) {
   const tagArray = colouredTags.split(',').map(tag => tag.trim().replace(/#/g, '').toLowerCase());
 
-  getPostElements({ excludeClass }).forEach(async postElement => {
+  getPostElements({ allPostElements, excludeClass }).forEach(async postElement => {
     const { canDelete, liked, rebloggedFromId, rebloggedRootId, rebloggedRootUuid, tags } = await timelineObject(postElement.dataset.id);
 
     const coloursToApply = [];

@@ -7,13 +7,13 @@ const excludeClass = 'xkit-seen-posts-done';
 const dimClass = 'xkit-seen-posts-seen';
 const onlyDimAvatarsClass = 'xkit-seen-posts-only-dim-avatar';
 
-const dimPosts = async function () {
+const dimPosts = async function (allPostElements) {
   const storageKey = 'seen_posts.seenPosts';
   const { [storageKey]: seenPosts = [] } = await browser.storage.local.get(storageKey);
 
   await exposeTimelines();
 
-  for (const postElement of getPostElements({ excludeClass, timeline: /\/v2\/timeline\/dashboard/, includeFiltered: true })) {
+  for (const postElement of getPostElements({ allPostElements, excludeClass, timeline: /\/v2\/timeline\/dashboard/, includeFiltered: true })) {
     const { id } = postElement.dataset;
 
     if (seenPosts.includes(id)) {

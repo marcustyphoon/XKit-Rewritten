@@ -10,12 +10,12 @@ let showOwnReblogs;
 let showReblogsWithContributedContent;
 let whitelistedUsernames;
 
-const processPosts = async function () {
+const processPosts = async function (allPostElements) {
   const whitelist = whitelistedUsernames.split(',').map(username => username.trim());
 
   await exposeTimelines();
 
-  getPostElements({ excludeClass, timeline: /\/v2\/timeline\/dashboard/, includeFiltered: true }).forEach(async postElement => {
+  getPostElements({ allPostElements, excludeClass, timeline: /\/v2\/timeline\/dashboard/, includeFiltered: true }).forEach(async postElement => {
     const { rebloggedRootId, canEdit, content, blogName } = await timelineObjectMemoized(postElement.dataset.id);
 
     if (!rebloggedRootId) { return; }

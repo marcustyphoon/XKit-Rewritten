@@ -139,9 +139,9 @@ const reblogPost = async function ({ currentTarget }) {
   actionButtons.appendChild(button);
 });
 
-const processPosts = async function () {
+const processPosts = async function (allPostElements) {
   const { [storageKey]: alreadyRebloggedList = [] } = await browser.storage.local.get(storageKey);
-  for (const postElement of getPostElements({ excludeClass })) {
+  for (const postElement of getPostElements({ allPostElements, excludeClass })) {
     const { id } = postElement.dataset;
     const { rebloggedRootId } = await timelineObjectMemoized(id);
 

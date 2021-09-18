@@ -8,8 +8,8 @@ const includeFiltered = true;
 const hiddenClass = 'xkit-tweaks-hide-filtered-posts-hidden';
 const css = `.${hiddenClass} article { display: none; }`;
 
-const processPosts = async function () {
-  getPostElements({ excludeClass, includeFiltered }).forEach(async postElement => {
+const processPosts = async function (allPostElements) {
+  getPostElements({ allPostElements, excludeClass, includeFiltered }).forEach(async postElement => {
     const { filtered } = await timelineObjectMemoized(postElement.dataset.id);
 
     if (filtered !== undefined && Object.keys(filtered).length !== 0) {

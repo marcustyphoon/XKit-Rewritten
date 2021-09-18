@@ -10,8 +10,8 @@ let reblogSelector;
 const excludeClass = 'xkit-cleanfeed-done';
 const hiddenClass = 'xkit-cleanfeed-filtered';
 
-const processPosts = async function () {
-  getPostElements({ excludeClass }).forEach(async postElement => {
+const processPosts = async function (allPostElements) {
+  getPostElements({ allPostElements, excludeClass }).forEach(async postElement => {
     if (blockingMode === 'all') {
       postElement.classList.add(hiddenClass);
       return;

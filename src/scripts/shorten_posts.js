@@ -35,8 +35,8 @@ const unshortenOnClick = ({ currentTarget }) => {
   currentTarget.remove();
 };
 
-const shortenPosts = async function () {
-  getPostElements({ excludeClass, noPeepr: true }).forEach(postElement => {
+const shortenPosts = async function (allPostElements) {
+  getPostElements({ allPostElements, excludeClass, noPeepr: true }).forEach(postElement => {
     if (postElement.getBoundingClientRect().height > (window.innerHeight * maxHeight)) {
       postElement.classList.add(shortenClass);
 
