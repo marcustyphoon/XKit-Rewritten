@@ -2,7 +2,7 @@ const baseContainerNode = document.getElementById('base-container');
 const dialogSelector = '[role="dialog"][aria-modal="true"]';
 const postSelector = '[tabindex="-1"][data-id]';
 
-const ListenerTracker = function () {
+const ListenerTracker = function (supplyAllPostElements) {
   this.listeners = [];
 
   this.addListener = function (callback) {
@@ -19,11 +19,16 @@ const ListenerTracker = function () {
   };
 
   this.trigger = function () {
-    this.listeners.forEach(callback => callback());
+    let allPostElements;
+    if (supplyAllPostElements) {
+      const selector = '[tabindex="-1"][data-id]';
+      allPostElements = [...document.querySelectorAll(selector)];
+    }
+    this.listeners.forEach(callback => callback(allPostElements));
   };
 };
 
-export const onNewPosts = Object.freeze(new ListenerTracker());
+export const onNewPosts = Object.freeze(new ListenerTracker(true));
 export const onPostsMutated = Object.freeze(new ListenerTracker());
 export const onBaseContainerMutated = Object.freeze(new ListenerTracker());
 export const onGlassContainerMutated = Object.freeze(new ListenerTracker());

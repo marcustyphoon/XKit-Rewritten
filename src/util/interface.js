@@ -6,13 +6,18 @@
  * @param {boolean} [options.includeFiltered] - Whether to include filtered posts
  * @returns {HTMLDivElement[]} Post elements matching the query options
  */
-export const getPostElements = function ({ excludeClass, timeline, noPeepr = false, includeFiltered = false }) {
+export const getPostElements = function ({ allPostElements, excludeClass, timeline, noPeepr = false, includeFiltered = false }) {
   if (!excludeClass) {
     return [];
   }
 
-  const selector = `[tabindex="-1"][data-id]:not(.${excludeClass})`;
-  let postElements = [...document.querySelectorAll(selector)];
+  let postElements;
+  if (allPostElements) {
+    postElements = allPostElements.filter(element => !element.classList.contains(excludeClass));
+  } else {
+    const selector = `[tabindex="-1"][data-id]:not(.${excludeClass})`;
+    postElements = [...document.querySelectorAll(selector)];
+  }
 
   if (timeline instanceof RegExp) {
     postElements = postElements.filter(postElement => timeline.test(postElement.closest('[data-timeline]').dataset.timeline));
