@@ -19,8 +19,8 @@ const hideNotes = async function () {
       replacement.classList.add(replacementClass);
 
       const textWithoutCount = noteElement.innerText
-        .replace(/^[\d,]+ ?/, '')
-        .replace(/ [\d,]+.*/, '');
+        .replace(/^[\d,.\s]*/, '')
+        .replace(/[\d,.\s]+개$/, '');
       replacement.innerText = textWithoutCount;
 
       noteElement.before(replacement);
