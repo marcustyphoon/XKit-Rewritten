@@ -7,19 +7,14 @@ let scrollToBottomButton;
 let scrollToBottomIcon;
 let active = false;
 
-const scrollToBottom = () => {
-  window.scrollTo({ top: document.documentElement.scrollHeight });
-  if (document.querySelector(knightRiderLoaderSelector) === null) {
-    stopScrolling();
-  }
-};
+const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight });
 const observer = new ResizeObserver(scrollToBottom);
 
 const startScrolling = () => {
   observer.observe(document.documentElement);
+  scrollToBottom();
   active = true;
   scrollToBottomIcon.style.fill = 'rgb(var(--yellow))';
-  scrollToBottom();
 };
 
 const stopScrolling = () => {
@@ -32,9 +27,10 @@ const onClick = () => active ? stopScrolling() : startScrolling();
 const onKeyDown = ({ key }) => key === '.' && stopScrolling();
 
 const mutationCallback = () => {
+  const noLoaderOnPage = document.querySelector(knightRiderLoaderSelector) === null;
   const buttonWasRemoved = document.documentElement.contains(scrollToBottomButton) === false;
 
-  if (active && buttonWasRemoved) {
+  if (active && (noLoaderOnPage || buttonWasRemoved)) {
     stopScrolling();
   } else if (!scrollToBottomButton || buttonWasRemoved) {
     init();
@@ -66,7 +62,7 @@ const init = async function () {
 };
 
 export const main = async function () {
-  knightRiderLoaderSelector = await descendantSelector('main', 'loader', 'knightRiderLoader');
+  knightRiderLoaderSelector = await descendantSelector('postColumn', 'timeline', 'loader', 'knightRiderLoader');
   onBaseContainerMutated.addListener(mutationCallback);
   init();
 };
