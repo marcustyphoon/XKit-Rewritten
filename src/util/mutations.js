@@ -31,7 +31,7 @@ export const pageModifications = Object.freeze({
   register (selector, modifierFunction) {
     if (this.listeners.has(modifierFunction) === false) {
       this.listeners.set(modifierFunction, selector);
-      modifierFunction([...document.querySelectorAll(selector)]);
+      modifierFunction({ added: [...document.querySelectorAll(selector)], removed: [] });
     }
   },
   unregister (modifierFunction) {
@@ -39,23 +39,40 @@ export const pageModifications = Object.freeze({
   }
 });
 
+const synchronousLag = (ms) => {
+  const timer = performance.now();
+  while (performance.now() - timer < ms) {}
+};
+
 const onBeforeRepaint = () => {
   repaintQueued = false;
 
   const addedNodes = mutationsPool
     .flatMap(({ addedNodes }) => [...addedNodes])
     .filter(addedNode => addedNode instanceof Element);
+  const removedNodes = mutationsPool
+    .flatMap(({ removedNodes }) => [...removedNodes])
+    .filter(removedNodes => removedNodes instanceof Element);
+
   mutationsPool = [];
 
-  if (addedNodes.length === 0) return;
+  if (addedNodes.length === 0 && removedNodes.length === 0) return;
 
   for (const [modifierFunction, selector] of pageModifications.listeners) {
-    const matchingElements = [
+    console.log('addedNodes', addedNodes);
+    console.log('removedNodes', removedNodes);
+    const addedElements = [
       ...addedNodes.filter(addedNode => addedNode.matches(selector)),
       ...addedNodes.flatMap(addedNode => [...addedNode.querySelectorAll(selector)])
     ];
-    if (matchingElements.length !== 0) {
-      modifierFunction(matchingElements);
+    const removedElements = [
+      ...removedNodes.filter(removedNode => removedNode.matches(selector)),
+      ...removedNodes.flatMap(removedNode => [...removedNode.querySelectorAll(selector)])
+    ];
+    console.log('addedElements', addedElements);
+    console.log('removedElements', removedElements);
+    if (addedElements.length !== 0 || removedElements.length !== 0) {
+      modifierFunction({ added: addedElements, removed: removedElements });
     }
   }
 };
@@ -82,7 +99,7 @@ const observer = new MutationObserver(mutations => {
   if (pageModifications.listeners.size !== 0) {
     mutationsPool.push(...mutations);
     if (repaintQueued === false) {
-      window.requestAnimationFrame(onBeforeRepaint);
+      window.requestAnimationFrame(() => { synchronousLag(15); onBeforeRepaint(); });
       repaintQueued = true;
     }
   }

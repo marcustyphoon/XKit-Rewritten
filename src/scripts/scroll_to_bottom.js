@@ -1,6 +1,6 @@
 import { keyToClasses, descendantSelector } from '../util/css_map.js';
 import { translate } from '../util/language_data.js';
-import { onBaseContainerMutated } from '../util/mutations.js';
+import { pageModifications } from '../util/mutations.js';
 
 let knightRiderLoaderSelector;
 let scrollToBottomButton;
@@ -26,8 +26,8 @@ const stopScrolling = () => {
 const onClick = () => active ? stopScrolling() : startScrolling();
 const onKeyDown = ({ key }) => key === '.' && stopScrolling();
 
-const mutationCallback = () => {
-  const noLoaderOnPage = document.querySelector(knightRiderLoaderSelector) === null;
+const mutationCallback = ({ removed: knightRiderLoaderRemoved }) => {
+  const noLoaderOnPage = knightRiderLoaderRemoved.length !== 0;
   const buttonWasRemoved = document.documentElement.contains(scrollToBottomButton) === false;
 
   if (active && (noLoaderOnPage || buttonWasRemoved)) {
@@ -63,12 +63,14 @@ const init = async function () {
 
 export const main = async function () {
   knightRiderLoaderSelector = await descendantSelector('postColumn', 'timeline', 'loader', 'knightRiderLoader');
-  onBaseContainerMutated.addListener(mutationCallback);
+  // onBaseContainerMutated.addListener(mutationCallback);
+  pageModifications.register(knightRiderLoaderSelector, mutationCallback);
   init();
 };
 
 export const clean = async function () {
-  onBaseContainerMutated.removeListener(mutationCallback);
+  // onBaseContainerMutated.removeListener(mutationCallback);
+  pageModifications.unregister(mutationCallback);
   stopScrolling();
   scrollToBottomButton?.remove();
 };

@@ -31,7 +31,8 @@ const constructRelativeTimeString = function (unixTime) {
   return relativeTimeFormat.format(-0, 'second');
 };
 
-const formatTimeElements = function (timeElements) {
+const formatTimeElements = function ({ added: timeElements }) {
+  console.log('timeElements', timeElements);
   timeElements.forEach(timeElement => {
     const momentDate = moment(timeElement.dateTime, moment.ISO_8601);
     timeElement.dataset.formattedTime = momentDate.format(format);
