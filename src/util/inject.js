@@ -10,8 +10,10 @@ let messagePort;
 
 const messageHandler = function ({ data: { result, exception, xkitCallbackId } }) {
   if (callbacks.has(xkitCallbackId)) {
-    const [resolve, reject] = callbacks.get(xkitCallbackId);
-    callbacks.delete(xkitCallbackId);
+    const [resolve, reject, continuous] = callbacks.get(xkitCallbackId);
+    if (continuous === false) {
+      callbacks.delete(xkitCallbackId);
+    }
 
     if (exception === undefined) {
       resolve(JSON.parse(result || 'null'));
@@ -61,7 +63,7 @@ const init = new Promise(resolve => {
  */
 export const inject = (asyncFunc, args = []) => new Promise((resolve, reject) => {
   const callbackId = Math.random();
-  callbacks.set(callbackId, [resolve, reject]);
+  callbacks.set(callbackId, [resolve, reject, false]);
 
   const script = document.createElement('script');
 
@@ -86,3 +88,32 @@ export const inject = (asyncFunc, args = []) => new Promise((resolve, reject) =>
     script.remove();
   });
 });
+
+// todo: jsdoc
+export const injectContinuous = (func, args = {}, callback) => {
+  const callbackId = Math.random();
+  callbacks.set(callbackId, [callback, (result) => callback(Promise.reject(result)), true]);
+
+  const script = document.createElement('script');
+
+  script.setAttribute('nonce', nonce);
+  script.textContent = `{
+    const callback = result => window.xkit$${injectKey}.messagePort.postMessage({
+      xkitCallbackId: ${callbackId},
+      result: JSON.stringify(result),
+    });
+    (${func.toString()})({ callback, ...${JSON.stringify(args)} })
+    .catch(exception => window.xkit$${injectKey}.messagePort.postMessage({
+      xkitCallbackId: ${callbackId},
+      exception: JSON.stringify(Object.assign({}, exception, {
+        message: exception.message,
+        stack: exception.stack,
+      })),
+    }))
+  }`;
+
+  init.then(() => {
+    document.documentElement.appendChild(script);
+    script.remove();
+  });
+};
