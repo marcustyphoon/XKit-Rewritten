@@ -39,7 +39,7 @@ const unburyTargetPostIds = async (notificationSelector) => {
     });
 };
 
-const processNotifications = () => inject(unburyTargetPostIds, [notificationSelector]);
+const processNotifications = () => inject(unburyTargetPostIds, [notificationSelector], 'xkitUnburyTargetPostIds');
 
 const onButtonClicked = async function ({ currentTarget }) {
   const postElement = currentTarget.closest('[data-id]');

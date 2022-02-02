@@ -8,9 +8,10 @@ import { inject } from './inject.js';
 export const apiFetch = async function (...args) {
   return inject(
     async (resource, init) => window.tumblr.apiFetch(resource, init),
-    args
+    args,
+    'xkitApiFetch'
   );
 };
 
-export const getCssMap = inject(async () => window.tumblr.getCssMap());
-export const getLanguageData = inject(async () => window.tumblr.languageData);
+export const getCssMap = inject(async () => window.tumblr.getCssMap(), [], 'xkitGetCssMap');
+export const getLanguageData = inject(async () => window.tumblr.languageData, [], 'xkitGetLanguageData');

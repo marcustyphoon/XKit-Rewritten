@@ -28,7 +28,7 @@ export const timelineObject = async function (postID) {
         fiber = fiber.return;
       }
     }
-  }, [postID]);
+  }, [postID], 'xkitTimelineObject');
   return cache[postID];
 };
 
@@ -59,7 +59,7 @@ export const exposeTimelines = async () => {
   const selector = timelineClasses.map(className => `.${className}:not([data-timeline])`).join(',');
 
   if (document.querySelectorAll(selector).length) {
-    inject(unburyGivenPaths, [selector]);
+    inject(unburyGivenPaths, [selector], 'xkitUnburyGivenPaths');
   }
 };
 
@@ -91,4 +91,4 @@ export const editPostFormTags = async ({ add = [], remove = [] }) => inject(asyn
       fiber = fiber.return;
     }
   }
-}, [{ add, remove }]);
+}, [{ add, remove }], 'xkitEditPostFormTags');

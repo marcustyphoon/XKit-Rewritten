@@ -57,9 +57,10 @@ const init = new Promise(resolve => {
 /**
  * @param {Function} asyncFunc - Asynchronous function to run in the page context
  * @param {Array} args - Array of arguments to pass to the function via spread
+ * @param {string} [name] - A name to give the function in stack traces
  * @returns {Promise<any>} The return value of the async function, or the caught exception
  */
-export const inject = (asyncFunc, args = []) => new Promise((resolve, reject) => {
+export const inject = (asyncFunc, args = [], name = 'xkitInjected') => new Promise((resolve, reject) => {
   const callbackId = Math.random();
   callbacks.set(callbackId, [resolve, reject]);
 
@@ -67,7 +68,8 @@ export const inject = (asyncFunc, args = []) => new Promise((resolve, reject) =>
 
   script.setAttribute('nonce', nonce);
   script.textContent = `{
-    (${asyncFunc.toString()})(...${JSON.stringify(args)})
+    const ${name} = ${asyncFunc.toString()};
+    ${name}(...${JSON.stringify(args)})
     .then(result => window.xkit$${injectKey}.messagePort.postMessage({
       xkitCallbackId: ${callbackId},
       result: JSON.stringify(result),

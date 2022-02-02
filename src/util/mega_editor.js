@@ -48,5 +48,5 @@ export const megaEdit = async function (postIds, options) {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
     body
-  }), [`https://www.tumblr.com/${pathname}`, $.param(requestBody)]);
+  }), [`https://www.tumblr.com/${pathname}`, $.param(requestBody)], 'xkitMegaEdit');
 };
