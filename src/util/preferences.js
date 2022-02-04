@@ -1,11 +1,23 @@
+const scriptManifests = {};
+
+export const getScriptManifest = async (name) => {
+  if (!scriptManifests[name]) {
+    const scriptManifestURL = browser.runtime.getURL(`/scripts/${name}.json`);
+    const scriptManifestFile = await fetch(scriptManifestURL);
+    const scriptManifest = await scriptManifestFile.json();
+
+    scriptManifests[name] = scriptManifest;
+  }
+
+  return scriptManifests[name];
+};
+
 /**
  * @param {string} scriptName - Filename (without file extension) of script
  * @returns {Promise<object>} The script's preference values
  */
 export const getPreferences = async function (scriptName) {
-  const scriptManifestURL = browser.runtime.getURL(`/scripts/${scriptName}.json`);
-  const scriptManifestFile = await fetch(scriptManifestURL);
-  const scriptManifest = await scriptManifestFile.json();
+  const scriptManifest = await getScriptManifest(scriptName);
 
   const { preferences = {} } = scriptManifest;
   const unsetPreferences = {};

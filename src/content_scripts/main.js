@@ -2,8 +2,8 @@
 
 {
   const { getURL } = browser.runtime;
-  const redpop = [...document.scripts].some(({ src }) => src.includes('/pop/'));
-  const isReactLoaded = () => document.querySelector('[data-rh]') === null;
+  const redpop = true;
+  const isReactLoaded = () => [...document.scripts].some(({ src }) => src.includes('/pop/')) && document.querySelector('[data-rh]') === null;
 
   const restartListeners = {};
 
@@ -73,14 +73,23 @@
   };
 
   const init = async function () {
-    browser.storage.onChanged.addListener(onStorageChanged);
+    const delay = isReactLoaded() ? null : waitForReactLoaded();
 
     const installedScripts = await getInstalledScripts();
     const { enabledScripts = [] } = await browser.storage.local.get('enabledScripts');
 
+    const { getScriptManifest } = await import(getURL('/util/preferences.js'));
+    installedScripts.forEach(getScriptManifest);
+
+    await delay;
+
+    browser.storage.onChanged.addListener(onStorageChanged);
+
     installedScripts
       .filter(scriptName => enabledScripts.includes(scriptName))
-      .forEach(runScript);
+      .forEach(name => {
+        runScript(name, delay);
+      });
   };
 
   const waitForReactLoaded = () => new Promise(resolve => {
@@ -88,6 +97,8 @@
   });
 
   if (redpop) {
-    isReactLoaded() ? init() : waitForReactLoaded().then(init);
+    init();
+  } else {
+    console.log('meh');
   }
 }
