@@ -83,12 +83,29 @@ const onBeforeRepaint = () => {
   }
 };
 
+const test = {};
+
 const observer = new MutationObserver(mutations => {
   mutationsPool.push(...mutations);
   if (repaintQueued === false) {
+    const id = Math.random();
+    const timer = performance.now();
+
     Promise.race([
-      new Promise(resolve => window.requestAnimationFrame(resolve)),
-      new Promise(resolve => setTimeout(resolve, 500))
+      new Promise(resolve => window.requestAnimationFrame(() => {
+        console.log(id, new Date().toTimeString(), 'time until rAF:', performance.now() - timer);
+        test[id] = true;
+        resolve();
+      })),
+      new Promise(resolve => window.requestIdleCallback(() => {
+        if (test[id]) {
+          // console.log(id, 'unneeded requestIdleCallback');
+        } else {
+          console.log('wow the repaint is still queued at the end of requestIdleCallback');
+          console.log(id, new Date().toTimeString(), 'time until requestIdleCallback, which was first:', performance.now() - timer);
+        }
+        // resolve();
+      }))
     ]).then(onBeforeRepaint);
     repaintQueued = true;
   }
