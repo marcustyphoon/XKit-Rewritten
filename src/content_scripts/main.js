@@ -7,19 +7,49 @@
 
   const restartListeners = {};
 
+  let cssCache;
+
+  const getCss = async function (name) {
+    const url = getURL(`/scripts/${name}.css`);
+    const file = await fetch(url);
+    const css = await file.text();
+
+    return css;
+  };
+
   const runScript = async function (name) {
+    if (cssCache[name]) {
+      // const link = Object.assign(document.createElement('link'), {
+      //   rel: 'stylesheet',
+      //   href: getURL(`/scripts/${name}.css`)
+      // });
+      // document.documentElement.appendChild(link);
+
+      // const css = await getCss(name);
+      const css = cssCache[name];
+      const styleElement = Object.assign(document.createElement('style'), { className: `xkitstyle_${name}`, textContent: css });
+
+      document.head.append(styleElement);
+    }
+
     const scriptPath = getURL(`/scripts/${name}.js`);
     const { main, clean, stylesheet, onStorageChanged } = await import(scriptPath);
 
     main().catch(console.error);
 
-    if (stylesheet) {
-      const link = Object.assign(document.createElement('link'), {
-        rel: 'stylesheet',
-        href: getURL(`/scripts/${name}.css`)
-      });
-      document.documentElement.appendChild(link);
-    }
+    // if (stylesheet) {
+    //   // const link = Object.assign(document.createElement('link'), {
+    //   //   rel: 'stylesheet',
+    //   //   href: getURL(`/scripts/${name}.css`)
+    //   // });
+    //   // document.documentElement.appendChild(link);
+
+    //   // const css = await getCss(name);
+    //   const css = cssCache[name];
+    //   const styleElement = Object.assign(document.createElement('style'), { className: `xkitstyle_${name}`, textContent: css });
+
+    //   document.head.append(styleElement);
+    // }
 
     restartListeners[name] = onStorageChanged || function (changes, areaName) {
       if (areaName !== 'local') { return; }
@@ -39,7 +69,9 @@
     clean().catch(console.error);
 
     if (stylesheet) {
-      document.querySelector(`link[href="${getURL(`/scripts/${name}.css`)}"]`)?.remove();
+      // document.querySelector(`link[href="${getURL(`/scripts/${name}.css`)}"]`)?.remove();
+      console.log(name, document.querySelector(`style.xkitstyle_${name}`));
+      document.head.querySelector(`style.xkitstyle_${name}`)?.remove();
     }
 
     browser.storage.onChanged.removeListener(restartListeners[name]);
@@ -73,10 +105,16 @@
   };
 
   const init = async function () {
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     browser.storage.onChanged.addListener(onStorageChanged);
 
     const installedScripts = await getInstalledScripts();
     const { enabledScripts = [] } = await browser.storage.local.get('enabledScripts');
+
+    cssCache = Object.fromEntries(await Promise.all(installedScripts.map(async name => [name, await getCss(name).catch(() => null)])));
+
+    console.log('cssCache', cssCache);
 
     installedScripts
       .filter(scriptName => enabledScripts.includes(scriptName))
