@@ -68,6 +68,46 @@
       "type": "checkbox",
       "label": "Hide the \"Now, where were we?\" button",
       "default": false
+    },
+    "show_all_tags": {
+      "type": "checkbox",
+      "label": "Show every line of tags by default",
+      "default": false
+    },
+    "hide_notification_home": {
+      "type": "checkbox",
+      "label": "Hide the home notification badge",
+      "default": false
+    },
+    "hide_notification_messaging": {
+      "type": "checkbox",
+      "label": "Hide the messaging notification badge",
+      "default": false
+    },
+    "hide_notification_activity": {
+      "type": "checkbox",
+      "label": "Hide the activity notification badge",
+      "default": false
+    },
+    "hide_notification_account": {
+      "type": "checkbox",
+      "label": "Hide the account notification badge",
+      "default": false
+    },
+    "hide_share": {
+      "type": "checkbox",
+      "label": "Hide the share button on posts",
+      "default": false
+    },
+    "hide_notes": {
+      "type": "checkbox",
+      "label": "Hide the notes on posts",
+      "default": false
+    },
+    "hide_follower_count": {
+      "type": "checkbox",
+      "label": "Hide your follower count",
+      "default": false
     }
   }
 }
