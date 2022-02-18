@@ -3,8 +3,8 @@ import { inject } from './inject.js';
 const requestApiFetch = async (resource, init) =>
   window.tumblr.apiFetch(resource, init)
     .catch(error => {
-      const consoleWarn = console.warn.__sentry_original__ || console.warn;
-      consoleWarn('XKit Rewritten API fetch was rejected with:', JSON.stringify(error, null, 2));
+      const consoleError = console.error.__sentry_original__ || console.error;
+      consoleError('XKit Rewritten API fetch was rejected with:', JSON.stringify(error, null, 2));
       throw error;
     });
 
