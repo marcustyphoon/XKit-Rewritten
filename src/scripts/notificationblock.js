@@ -4,6 +4,7 @@ import { pageModifications } from '../util/mutations.js';
 import { inject } from '../util/inject.js';
 import { keyToCss } from '../util/css_map.js';
 import { showModal, hideModal, modalCancelButton } from '../util/modals.js';
+import { timelineObjectMemoized } from '../util/react_props.js';
 
 const storageKey = 'notificationblock.blockedPostTargetIDs';
 const meatballButtonBlockId = 'notificationblock-block';
@@ -47,13 +48,35 @@ const onButtonClicked = async function ({ currentTarget }) {
 
   const shouldBlockNotifications = blockedPostTargetIDs.includes(id) === false;
 
+  const { trail } = await timelineObjectMemoized(id);
+  const isBlockable = ({ blog, post: id }) => blog?.isMember && blockedPostTargetIDs.includes(id) === false;
+  const originalIsBlockable = trail.slice(0, 1).some(isBlockable);
+  const trailHasBlockable = trail.slice(1).some(isBlockable);
+
+  const prose1 = [
+    ...originalIsBlockable ? ['the original post'] : [],
+    ...trailHasBlockable ? ['previous reblogs'] : []
+  ].join(' or ');
+  const prose2 = trail.filter(isBlockable).length > 1 ? 'them' : 'it';
+
   const title = shouldBlockNotifications
     ? 'Block this post\'s notifications?'
     : 'Unblock this post\'s notifications?';
   const message = [
     shouldBlockNotifications
       ? 'Notifications for this post will be hidden from your activity feed.'
-      : 'Notifications for this post will appear in your activity feed again.'
+      : 'Notifications for this post will appear in your activity feed again.',
+    ...shouldBlockNotifications && (originalIsBlockable || trailHasBlockable)
+      ? [
+          document.createElement('br'),
+          document.createElement('br'),
+          Object.assign(document.createElement('strong'), { textContent: 'Warning: ' }),
+          document.createElement('br'),
+          'Only notifications about this reblog will be blocked.',
+          document.createElement('br'),
+          `To block notifications about ${prose1}, select ${prose2} and repeat this process.`
+        ]
+      : []
   ];
   const textContent = shouldBlockNotifications
     ? 'Block notifications'
