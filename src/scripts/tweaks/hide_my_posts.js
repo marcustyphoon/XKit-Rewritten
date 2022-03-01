@@ -3,7 +3,6 @@ import { onNewPosts } from '../../util/mutations.js';
 import { buildStyle, filterPostElements } from '../../util/interface.js';
 import { exposeTimelines, timelineObjectMemoized } from '../../util/react_props.js';
 
-const excludeClass = 'xkit-tweaks-hide-my-posts-done';
 const timeline = /\/v2\/timeline\/dashboard/;
 
 const hiddenClass = 'xkit-tweaks-hide-my-posts-hidden';
@@ -13,7 +12,7 @@ let primaryBlogName;
 
 const processPosts = async function (postElements) {
   await exposeTimelines();
-  filterPostElements(postElements, { excludeClass, timeline }).forEach(async postElement => {
+  filterPostElements(postElements, { timeline }).forEach(async postElement => {
     const { canEdit, isSubmission, postAuthor } = await timelineObjectMemoized(postElement.dataset.id);
 
     if (canEdit && (isSubmission || postAuthor === primaryBlogName || postAuthor === undefined)) {
@@ -33,6 +32,5 @@ export const clean = async function () {
   onNewPosts.removeListener(processPosts);
   styleElement.remove();
 
-  $(`.${excludeClass}`).removeClass(excludeClass);
   $(`.${hiddenClass}`).removeClass(hiddenClass);
 };
