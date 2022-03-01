@@ -3,7 +3,6 @@ import { exposeTimelines } from '../util/react_props.js';
 import { getPreferences } from '../util/preferences.js';
 import { onNewPosts } from '../util/mutations.js';
 
-const excludeClass = 'xkit-seen-posts-done';
 const timeline = /\/v2\/timeline\/dashboard/;
 const includeFiltered = true;
 
@@ -16,7 +15,7 @@ const dimPosts = async function (postElements) {
 
   await exposeTimelines();
 
-  for (const postElement of filterPostElements(postElements, { excludeClass, timeline, includeFiltered })) {
+  for (const postElement of filterPostElements(postElements, { timeline, includeFiltered })) {
     const { id } = postElement.dataset;
 
     if (seenPosts.includes(id)) {
@@ -56,7 +55,6 @@ export const main = async function () {
 
 export const clean = async function () {
   onNewPosts.removeListener(dimPosts);
-  $(`.${excludeClass}`).removeClass(excludeClass);
   $(`.${dimClass}`).removeClass(dimClass);
   $(`.${onlyDimAvatarsClass}`).removeClass(onlyDimAvatarsClass);
 };
