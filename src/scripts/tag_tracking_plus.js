@@ -29,7 +29,7 @@ const processPosts = async function (postElements) {
   const timeline = new RegExp(`/v2/hubs/${encodedCurrentTag}/timeline`);
   await exposeTimelines();
 
-  for (const postElement of filterPostElements(postElements, { excludeClass, timeline, includeFiltered })) {
+  for (const postElement of filterPostElements(postElements, { timeline, includeFiltered })) {
     const { timestamp } = await timelineObjectMemoized(postElement.dataset.id);
     const savedTimestamp = timestamps[currentTag] || 0;
 
