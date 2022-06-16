@@ -1,5 +1,7 @@
 import { dom } from './dom.js';
 
+console.log('inject.js loaded');
+
 const { nonce } = [...document.scripts].find(script => script.getAttributeNames().includes('nonce'));
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 

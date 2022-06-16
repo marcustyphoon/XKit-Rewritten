@@ -1,5 +1,7 @@
 import { dom } from './dom.js';
 
+console.log('modals.js loaded');
+
 // Remove any outdated modal when loading module
 document.getElementById('xkit-modal')?.remove();
 

@@ -3,6 +3,8 @@ import { pageModifications } from './mutations.js';
 import { keyToCss } from './css_map.js';
 import { dom } from './dom.js';
 
+console.log('post_actions.js loaded');
+
 // Remove outdated post options when loading module
 $('.xkit-post-option').remove();
 

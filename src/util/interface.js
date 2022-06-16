@@ -1,5 +1,7 @@
 import { dom } from './dom.js';
 
+console.log('interface.js loaded');
+
 export const postSelector = '[tabindex="-1"][data-id]';
 export const blogViewSelector = '[style*="--blog-title-color"] *';
 

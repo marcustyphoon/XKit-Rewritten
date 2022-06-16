@@ -1,5 +1,7 @@
 import { inject } from './inject.js';
 
+console.log('tumblr_helpers.js loaded');
+
 /**
  * @param {...any} args - Arguments to pass to window.tumblr.apiFetch()
  * @see {@link https://github.com/tumblr/docs/blob/master/web-platform.md#apifetch}

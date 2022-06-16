@@ -1,3 +1,5 @@
+console.log('dom.js loaded');
+
 /**
  * Create elements with simple syntax
  *

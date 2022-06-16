@@ -1,5 +1,7 @@
 import { inject } from './inject.js';
 
+console.log('mega_editor.js loaded');
+
 let formKey;
 
 const pathnames = {

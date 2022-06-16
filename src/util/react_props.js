@@ -1,6 +1,8 @@
 import { inject } from './inject.js';
 import { primaryBlogName, userBlogNames, adminBlogNames } from './user.js';
 
+console.log('react_props.js loaded');
+
 const timelineObjectCache = new WeakMap();
 
 const unburyTimelineObject = () => {

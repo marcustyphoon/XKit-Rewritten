@@ -3,6 +3,8 @@ import { dom } from './dom.js';
 import { buildStyle } from './interface.js';
 import { buildSvg } from './remixicon.js';
 
+console.log('control_buttons.js loaded');
+
 // Remove outdated buttons when loading module
 $('.xkit-control-button-container').remove();
 

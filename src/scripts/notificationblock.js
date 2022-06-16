@@ -7,6 +7,8 @@ import { showModal, hideModal, modalCancelButton } from '../util/modals.js';
 import { dom } from '../util/dom.js';
 import { userBlogNames } from '../util/user.js';
 
+console.log('notificationblock loaded');
+
 const storageKey = 'notificationblock.blockedPostTargetIDs';
 const meatballButtonBlockId = 'notificationblock-block';
 const meatballButtonBlockLabel = 'Block notifications';
@@ -22,8 +24,10 @@ const buildCss = () => `:is(${
 }) { display: none; }`;
 
 const unburyTargetPostIds = async (notificationSelector) => {
+  console.log('notificationblock unburyTargetPostIds');
   [...document.querySelectorAll(notificationSelector)]
     .forEach(notificationElement => {
+      console.log('notificationElement');
       const reactKey = Object.keys(notificationElement).find(key => key.startsWith('__reactFiber'));
       let fiber = notificationElement[reactKey];
 
@@ -32,6 +36,7 @@ const unburyTargetPostIds = async (notificationSelector) => {
         if (notification !== undefined) {
           const { targetRootPostId, targetPostId } = notification;
           notificationElement.dataset.targetRootPostId = targetRootPostId || targetPostId;
+          console.log(targetRootPostId || targetPostId);
           break;
         } else {
           fiber = fiber.return;
@@ -102,6 +107,7 @@ export const onStorageChanged = (changes, areaName) => {
 };
 
 export const main = async function () {
+  console.log('notificationblock main');
   ({ [storageKey]: blockedPostTargetIDs = [] } = await browser.storage.local.get(storageKey));
   styleElement.textContent = buildCss();
   document.head.append(styleElement);

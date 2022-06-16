@@ -5,6 +5,8 @@ import { pageModifications } from './mutations.js';
 import { inject } from './inject.js';
 import { timelineObject } from './react_props.js';
 
+console.log('meatballs.js loaded');
+
 const postHeaderSelector = `${postSelector} article > header`;
 
 const testHeaderElement = (selector) => {

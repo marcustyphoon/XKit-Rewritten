@@ -1,11 +1,15 @@
 import { apiFetch } from './tumblr_helpers.js';
 
+console.log('user.js loaded, getting userInfo');
+
 const fetchedUserInfo = await apiFetch('/v2/user/info').catch(() => ({ response: {} }));
 
 /**
  * {object?} userInfo - The contents of the /v2/user/info API endpoint
  */
 export const userInfo = fetchedUserInfo.response.user;
+
+console.log('xkit rewritten userInfo: ', userInfo);
 
 /**
  * {object[]} userBlogs - An array of blog objects the current user has post access to

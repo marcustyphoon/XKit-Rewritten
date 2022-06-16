@@ -9,7 +9,9 @@
 
   const runScript = async function (name) {
     const scriptPath = getURL(`/scripts/${name}.js`);
+    console.log('running', name);
     const { main, clean, stylesheet, onStorageChanged } = await import(scriptPath);
+    console.log('imported successfully', name);
 
     main().catch(console.error);
 
@@ -78,12 +80,17 @@
   };
 
   const init = async function () {
+    console.log('xkit rewritten init');
+
     $('style.xkit').remove();
 
     browser.storage.onChanged.addListener(onStorageChanged);
 
     const installedScripts = await getInstalledScripts();
     const { enabledScripts = [] } = await browser.storage.local.get('enabledScripts');
+
+    console.log('installedScripts: ', installedScripts);
+    console.log('enabledScripts: ', enabledScripts);
 
     installedScripts
       .filter(scriptName => enabledScripts.includes(scriptName))

@@ -1,5 +1,7 @@
 import { dom } from './dom.js';
 
+console.log('remixicon.js loaded');
+
 const symbolsUrl = browser.runtime.getURL('/lib/remixicon/remixicon.symbol.svg');
 
 if (document.querySelector(`svg[data-src="${symbolsUrl}"]`) === null) {

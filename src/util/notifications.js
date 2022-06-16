@@ -1,6 +1,8 @@
 import { keyToCss } from './css_map.js';
 import { dom } from './dom.js';
 
+console.log('notifications.js loaded');
+
 const toastContainer = dom('div', { id: 'xkit-toasts' });
 
 const drawerContentSelectorPromise = keyToCss('drawerContent');

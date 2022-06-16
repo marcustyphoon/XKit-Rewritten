@@ -1,3 +1,5 @@
+console.log('preferences.js loaded');
+
 /**
  * @param {string} scriptName - Filename (without file extension) of script
  * @returns {Promise<object>} The script's preference values

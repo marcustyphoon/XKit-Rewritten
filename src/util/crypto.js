@@ -1,3 +1,5 @@
+console.log('crypto.js loaded');
+
 /**
  * @returns {string} Eight psuedo-random 8-bit hexadecimal numbers
  */

@@ -1,6 +1,8 @@
 import { postSelector } from './interface.js';
 const rootNode = document.getElementById('root');
 
+console.log('mutations.js loaded');
+
 const mutationsPool = [];
 let repaintQueued = false;
 

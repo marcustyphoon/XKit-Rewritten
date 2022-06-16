@@ -2,6 +2,8 @@ import { keyToCss } from './css_map.js';
 import { dom } from './dom.js';
 import { pageModifications } from './mutations.js';
 
+console.log('sidebar.js loaded');
+
 const sidebarItems = dom('div', { id: 'xkit-sidebar' });
 const conditions = new Map();
 
