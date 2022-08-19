@@ -28,7 +28,7 @@ const orListFormat = new Intl.ListFormat(enLocale, { type: 'disjunction' });
 const neitherListFormat = new Intl.ListFormat(enLocale, { type: 'unit' });
 
 const listFormatArray = (array, listFormat) => {
-  const indexesAsStrings = Array(array.length).fill().map((_, i) => String(i));
+  const indexesAsStrings = array.map((_, i) => String(i));
 
   return listFormat.formatToParts(indexesAsStrings).map(({ type, value }) => {
     if (type === 'element') {
