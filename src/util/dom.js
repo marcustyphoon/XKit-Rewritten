@@ -19,3 +19,41 @@ export function dom (tagName, attributes = {}, events = {}, children = []) {
   element.normalize();
   return element;
 }
+
+const enLocale = document.documentElement.lang.startsWith('en')
+  ? document.documentElement.lang
+  : 'en-US';
+const andListFormat = new Intl.ListFormat(enLocale, { type: 'conjunction' });
+const orListFormat = new Intl.ListFormat(enLocale, { type: 'disjunction' });
+const neitherListFormat = new Intl.ListFormat(enLocale, { type: 'unit' });
+
+const listFormatArray = (array, listFormat) => {
+  const indexesAsStrings = Array(array.length).fill().map((_, i) => String(i));
+
+  return listFormat.formatToParts(indexesAsStrings).map(({ type, value }) => {
+    if (type === 'element') {
+      const i = Number(value);
+      return array[i];
+    } else {
+      return value;
+    }
+  });
+};
+
+/**
+ * Formats an array of elements as an English prose list separated.
+ *
+ * @param {any[]} elements
+ * @param {string} andOr
+ * @returns {any[]}
+ */
+export const elementsAsList = (elements, andOr) => {
+  switch (andOr) {
+    case 'and':
+      return listFormatArray(elements, andListFormat);
+    case 'or':
+      return listFormatArray(elements, orListFormat);
+    default:
+      return listFormatArray(elements, neitherListFormat);
+  }
+};
