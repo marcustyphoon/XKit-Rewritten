@@ -85,9 +85,24 @@
     const installedScripts = await getInstalledScripts();
     const { enabledScripts = [] } = await browser.storage.local.get('enabledScripts');
 
-    installedScripts
-      .filter(scriptName => enabledScripts.includes(scriptName))
-      .forEach(runScript);
+    const scriptsSet = new Set(installedScripts.filter(scriptName => enabledScripts.includes(scriptName)));
+
+    const total = scriptsSet.size;
+    let count = 0;
+
+    console.log(`XKit Rewritten: Loading ${total} scripts...`);
+    scriptsSet.forEach(scriptName =>
+      runScript(scriptName).then(() => {
+        console.log(` - ${++count}/${total} ${scriptName} loaded.`);
+        scriptsSet.delete(scriptName);
+      })
+    );
+
+    setTimeout(() => {
+      if (scriptsSet.size) {
+        console.log(`XKit Rewritten has not yet loaded: ${[...scriptsSet].join(', ')}`);
+      }
+    }, 5000);
   };
 
   const waitForReactLoaded = () => new Promise(resolve => {
