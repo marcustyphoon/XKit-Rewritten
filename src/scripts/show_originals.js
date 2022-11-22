@@ -57,6 +57,8 @@ const addControls = async (timelineElement, location) => {
     controls.append(onButton, offButton);
 
     lengthenTimeline(timelineElement);
+
+    controls.dataset.showOriginals = 'on';
     const { [storageKey]: savedModes = {} } = await browser.storage.local.get(storageKey);
     const mode = savedModes[location] ?? 'on';
     controls.dataset.showOriginals = mode;
