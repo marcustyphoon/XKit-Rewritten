@@ -260,40 +260,41 @@ const onButtonClicked = async function ({ currentTarget: controlButton }) {
   });
   const minimumTimer = sleep(500);
 
-  const newTrailItem =
-    content && content.length ? [{ blog, content, layout, post: { id, timestamp } }] : [];
-
-  const trailWithNew = [...trail, ...newTrailItem];
-
-  const { newContent, newLayout } = trailToNPF(trailWithNew);
-
-  const excludeTrailItems = [...trailWithNew.keys()];
-
-  const requestPath = `/v2/blog/${targetBlog}/posts`;
-  const requestBody = {
-    content: newContent,
-    layout: newLayout,
-    exclude_trail_items: excludeTrailItems,
-    parent_post_id: id,
-    parent_tumblelog_uuid: blog.uuid,
-    reblog_key: reblogKey,
-    state: 'draft'
-  };
   try {
+    const newTrailItem =
+      content && content.length ? [{ blog, content, layout, post: { id, timestamp } }] : [];
+
+    const trailWithNew = [...trail, ...newTrailItem];
+
+    const { newContent, newLayout } = trailToNPF(trailWithNew);
+
+    const excludeTrailItems = [...trailWithNew.keys()];
+
+    const requestPath = `/v2/blog/${targetBlog}/posts`;
+    const requestBody = {
+      content: newContent,
+      layout: newLayout,
+      exclude_trail_items: excludeTrailItems,
+      parent_post_id: id,
+      parent_tumblelog_uuid: blog.uuid,
+      reblog_key: reblogKey,
+      state: 'draft'
+    };
+
     const {
       meta,
-      response: { displayText, id }
+      response: { displayText, id: draftId }
     } = await apiFetch(requestPath, { method: 'POST', body: requestBody });
     await minimumTimer;
     if (meta.status === 201) {
       showModal({
         title: displayText,
-        message: [`Navigating to draft ${id}...`]
+        message: [`Navigating to draft ${draftId}...`]
       });
     }
     await sleep(1500);
     hideModal();
-    navigate(`/edit/${targetBlog}/${id}`);
+    navigate(`/edit/${targetBlog}/${draftId}`);
   } catch (error) {
     console.error(error);
     if (error?.body?.errors?.[0]) {
