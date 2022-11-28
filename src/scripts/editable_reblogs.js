@@ -22,32 +22,131 @@ let controlButtonTemplate;
 //   name: 'anonymous'
 // };
 
-const trailToNPF = (trail, skipFirstFewItems = 0) => {
-  const trailToInclude = trail.slice(skipFirstFewItems);
-  if (trailToInclude.length === 0) {
-    throw new Error('generateEditableContent error, post is too big or something');
+// test with: 'paywall' block (tumblr.com/effinbirds)
+const supportedContentBlocks = ['text', 'image', 'link', 'audio', 'video'];
+const createFallbackContentBlock = () => ({
+  type: 'text',
+  text: '[unsupported]',
+  formatting: [{ type: 'color', start: 0, end: 13, hex: '#ff4930' }]
+});
+
+const isValidRowsLayout = ({ type, display }, layout, content) => {
+  if (type !== 'rows') return false;
+
+  if (!Array.isArray(display)) {
+    console.error('Invalid block layout!', layout, content);
+    return false;
   }
 
-  const newContent = trailToInclude.flatMap(
-    ({ blog, content, layout, post: { id, timestamp } }) => [
-      {
-        type: 'text',
-        subtype: 'heading2',
-        text: `${blog.name}:`,
-        formatting: [
-          { type: 'bold', start: 0, end: blog.name.length + 1 },
-          {
-            type: 'link',
-            start: 0,
-            end: blog.name.length,
-            url: `tumblr.com/${blog.name}/${id}`
-          }
-        ]
-      },
-      ...content,
-      { type: 'text', text: '-------------------------------------' }
-    ]
+  const allReferencedIndexes = display.flatMap(({ blocks }) => blocks).sort();
+  const valid =
+    allReferencedIndexes.length === content.length &&
+    allReferencedIndexes.every((value, index) => value === index);
+
+  if (!valid) {
+    console.error('Invalid block layout!', layout, content);
+    return false;
+  }
+
+  // dunno how to test this
+  const hasCarousel = display.some(({ mode }) => mode?.type === 'carousel');
+  if (hasCarousel) {
+    console.error('Block has carousel!', layout, content);
+    return false;
+  }
+  return true;
+};
+
+// currently supported layout block types: rows (without "carousel"), ask
+const normalizeRowsLayout = ({ blog, content: inputContent = [], layout = [], ...rest }) => {
+  // ids refer to location in this array; do not reorder it (appending is fine)
+  const content = inputContent.map(block =>
+    supportedContentBlocks.includes(block.type) ? block : createFallbackContentBlock()
   );
+
+  // rowsLayout will always be a rows layout object that references every block once with no carousels
+  const fallbackRowsLayout = {
+    type: 'rows',
+    display: content.map((value, index) => ({ blocks: [index] }))
+  };
+  const rowsLayout =
+    layout.find(object => isValidRowsLayout(object, layout, content)) ?? fallbackRowsLayout;
+
+  //
+
+  const mutableRowsLayout = JSON.parse(JSON.stringify(rowsLayout));
+
+  delete mutableRowsLayout.truncate_after;
+
+  const askLayout = layout.find(({ type }) => type === 'ask');
+  if (askLayout) {
+    const askingBlog = askLayout.attribution.blog.name ?? 'anonymous';
+
+    const inAskDisplayObjects = mutableRowsLayout.display.filter(({ blocks }) =>
+      askLayout.blocks.some(index => blocks.includes(index))
+    );
+    const notInAskDisplayObjects = mutableRowsLayout.display.filter(
+      ({ blocks }) => !askLayout.blocks.some(index => blocks.includes(index))
+    );
+
+    const createAttributionContent = text => ({
+      type: 'text',
+      text,
+      formatting: [{ type: 'bold', start: 0, end: text.length }]
+    });
+
+    const askAttributionContent = createAttributionContent(`${askingBlog} asked:`);
+    const answerAttributionContent = createAttributionContent(`${blog.name} answered:`);
+    content.push(askAttributionContent, answerAttributionContent);
+
+    mutableRowsLayout.display = [
+      { blocks: [content.findIndex(askAttributionContent)] },
+      ...inAskDisplayObjects,
+      { blocks: [content.findIndex(answerAttributionContent)] },
+      ...notInAskDisplayObjects
+    ];
+  }
+
+
+
+};
+
+// reorder content to be in order; renumber rows layout to point to new order
+const reorder = (oldRowsLayout, oldContent) => {
+  const newRowsLayout = JSON.parse(JSON.stringify(oldRowsLayout));
+
+    let counter = 0;
+    let newContent = [];
+
+    for (const {})
+}
+
+const trailToNPF = (trailInput, skipInitialBlocks = 0) => {
+  const trail = JSON.parse(JSON.stringify(trailInput));
+
+  // const trailToInclude = trail.slice(skipFirstFewItems);
+  // if (trailToInclude.length === 0) {
+  //   throw new Error('generateEditableContent error, post is too big or something');
+  // }
+
+  const newContent = trail.flatMap(({ blog, content, layout, post: { id, timestamp } }) => [
+    {
+      type: 'text',
+      subtype: 'heading2',
+      text: `${blog.name}:`,
+      formatting: [
+        { type: 'bold', start: 0, end: blog.name.length + 1 },
+        {
+          type: 'link',
+          start: 0,
+          end: blog.name.length,
+          url: `tumblr.com/${blog.name}/${id}`
+        }
+      ]
+    },
+    ...content,
+    { type: 'text', text: '-------------------------------------' }
+  ]);
 
   // npf layout concat + block id manipulation + readmore removal goes here
   const newLayout = [];
