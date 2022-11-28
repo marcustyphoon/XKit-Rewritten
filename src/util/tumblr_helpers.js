@@ -45,3 +45,52 @@ export const apiFetch = async function (...args) {
     args
   );
 };
+
+/* eslint-disable camelcase */
+const snakeToCamel = word => word.replace(/_(.)/g, (match, g1) => g1.toUpperCase());
+
+/**
+ * @see https://github.com/tumblr/docs/blob/master/api.md#postspost-id---editing-a-post-neue-post-format
+ * @see https://github.com/tumblr/docs/blob/master/api.md#posts---createreblog-a-post-neue-post-format
+ */
+const editRequestParamsSnake = [
+  'content',
+  'layout',
+  'state',
+  'publish_on',
+  'date',
+  'tags',
+  'source_url',
+  'send_to_twitter',
+  'slug',
+  'interactability_reblog',
+
+  'can_be_tipped',
+  'has_community_label',
+  'community_label_categories'
+];
+const editRequestParams = [...editRequestParamsSnake, ...editRequestParamsSnake.map(snakeToCamel)];
+
+// TODO: only accept apifetch results? you should be fetching, not using timelineObject, to avoid stale data
+// make sure bulk-fetched post data works though
+// (snake_case handling is probably unnecessary - no way for this to happen in input; easier to overwrite)
+
+/**
+ * Create the request body to edit a post using a PUT request to /posts/{post-id} without changing the post.
+ * camelCase or snake_case property keys are supported and will be passed through unchanged.
+ *
+ * @param {object} postProperties - Post properties from an API fetch or timelineObject.
+ * @returns {object} editRequestBody - /posts/{post-id} PUT request body parameters
+ */
+export const createEditRequest = postProperties => {
+  const { tags, source_url_raw, sourceUrlRaw, ...rest } = postProperties;
+
+  const entries = Object.entries({
+    ...rest,
+    tags: tags.join(','),
+    source_url: source_url_raw,
+    sourceUrl: sourceUrlRaw
+  });
+
+  return Object.fromEntries(entries.filter(([key, value]) => editRequestParams.includes(key)));
+};
