@@ -76,7 +76,7 @@ const getLocation = timelineElement => {
 
   };
   const location = Object.keys(on).find(location => on[location]);
-  const isDisabledBlog = disabledBlogs.some(name => timeline.startsWith(`/v2/blog/${name}/posts`));
+  const isDisabledBlog = disabledBlogs.some(name => timeline.startsWith(`/v2/blog/${name}/`));
 
   if (!location || isSinglePostBlogView) return undefined;
   if (isDisabledBlog) return 'disabled';
