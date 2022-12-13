@@ -23,6 +23,7 @@ const refreshCount = async function (search) {
   const savedTimestamp = timestamps[search] ?? 0;
   const {
     response: {
+      psa,
       timeline: { elements = [], links }
     }
   } = await apiFetch('/v2/timeline/search', {
@@ -52,7 +53,7 @@ const refreshCount = async function (search) {
   }
 
   const showPlus = unreadCount === posts.length && links?.next;
-  const unreadCountString = `${unreadCount}${showPlus ? '+' : ''}`;
+  const unreadCountString = psa ? 0 : `${unreadCount}${showPlus ? '+' : ''}`;
 
   [document, ...(!sidebarItem || document.contains(sidebarItem) ? [] : [sidebarItem])]
     .flatMap(node => [...node.querySelectorAll(`[data-count-for="${search}"]`)])
