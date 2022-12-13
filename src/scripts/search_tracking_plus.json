@@ -1,8 +1,8 @@
 {
   "title": "Search Tracking+",
-  "description": "Unread counts on followed searches",
+  "description": "Track searches in the sidebar",
   "icon": {
-    "class_name": "ri-hashtag",
+    "class_name": "ri-search-line",
     "color": "white",
     "background_color": "#000000"
   },
