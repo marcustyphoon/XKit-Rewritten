@@ -35,7 +35,7 @@ const refreshCount = async function (tag) {
     }
   } = await apiFetch(
     `/v2/hubs/${tag}/timeline`,
-    { queryParams: { limit: 20, sort: 'recent' } }
+    { queryParams: { limit: 20, sort: 'recent', skip_component: 'related_tags,blog_search' } }
   );
 
   const posts = elements.filter(({ objectType, displayType, recommendedSource }) =>
