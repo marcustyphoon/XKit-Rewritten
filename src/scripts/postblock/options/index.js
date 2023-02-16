@@ -4,6 +4,8 @@ const blockedPostList = document.getElementById('blocked-posts');
 const blockedPostTemplate = document.getElementById('blocked-post');
 
 const storageKey = 'postblock.blockedPostRootIDs';
+const uuidsStorageKey = 'postblock.uuids';
+const toOpenStorageKey = 'postblock.toOpen';
 
 const unblockPost = async function ({ currentTarget }) {
   let { [storageKey]: blockedPostRootIDs = [] } = await browser.storage.local.get(storageKey);
@@ -16,6 +18,7 @@ const unblockPost = async function ({ currentTarget }) {
 
 const renderBlockedPosts = async function () {
   const { [storageKey]: blockedPostRootIDs = [] } = await browser.storage.local.get(storageKey);
+  const { [uuidsStorageKey]: uuids = {} } = await browser.storage.local.get(uuidsStorageKey);
 
   postsBlockedCount.textContent = `${blockedPostRootIDs.length} blocked ${blockedPostRootIDs.length === 1 ? 'post' : 'posts'}`;
   blockedPostList.textContent = '';
@@ -29,12 +32,28 @@ const renderBlockedPosts = async function () {
     unblockButton.dataset.postId = blockedPostID;
     unblockButton.addEventListener('click', unblockPost);
 
+    if (uuids[blockedPostID]) {
+      const a = document.createElement('a');
+      a.href = 'javascript:void(0);';
+      a.addEventListener('click', async () => {
+        await browser.storage.local.set({
+          [toOpenStorageKey]: { uuid: uuids[blockedPostID], blockedPostID }
+        });
+        window.open('https://www.tumblr.com/');
+      });
+      spanElement.replaceWith(a);
+      a.append(spanElement);
+    }
+
     blockedPostList.append(templateClone);
   }
 };
 
 browser.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'local' && Object.keys(changes).includes(storageKey)) {
+  if (
+    areaName === 'local' &&
+    (Object.keys(changes).includes(storageKey) || Object.keys(changes).includes(uuidsStorageKey))
+  ) {
     renderBlockedPosts();
   }
 });
