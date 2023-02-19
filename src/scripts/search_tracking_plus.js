@@ -1,4 +1,4 @@
-import { apiFetch, navigate } from '../util/tumblr_helpers.js';
+import { apiFetch, onClickNavigate } from '../util/tumblr_helpers.js';
 import { filterPostElements } from '../util/interface.js';
 import { timelineObject } from '../util/react_props.js';
 import { onNewPosts } from '../util/mutations.js';
@@ -129,7 +129,8 @@ export const main = async function () {
     title: 'Search Tracking+',
     rows: searches.map(search => ({
       label: `${search}`,
-      onclick: () => navigate(`/search/${search}/recent`),
+      href: `/search/${encodeURIComponent(search)}/recent`,
+      onclick: onClickNavigate,
       count: '\u22EF'
     }))
   });
