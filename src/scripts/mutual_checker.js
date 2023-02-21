@@ -46,7 +46,7 @@ const styleElement = buildStyle(`
   }
 `);
 
-const createIcon = blogName => dom('svg', {
+const createIcon = (blogName, mutual = true) => dom('svg', {
   xmlns: 'http://www.w3.org/2000/svg',
   class: mutualIconClass,
   viewBox: '0 0 1000 1000',
@@ -55,7 +55,9 @@ const createIcon = blogName => dom('svg', {
   dom('title', { xmlns: 'http://www.w3.org/2000/svg' }, null, [
     translate('{{blogNameLink /}} follows you!').replace('{{blogNameLink /}}', blogName)
   ]),
-  dom('path', { xmlns: 'http://www.w3.org/2000/svg', d: aprilFools ? aprilFoolsPath : regularPath })
+  mutual
+    ? dom('path', { xmlns: 'http://www.w3.org/2000/svg', d: aprilFools ? aprilFoolsPath : regularPath })
+    : dom('use', { xmlns: 'http://www.w3.org/2000/svg', href: '#ri-user-shared-line' })
 ]);
 
 const alreadyProcessed = postElement =>
@@ -92,12 +94,13 @@ const processBlogCardLinks = blogCardLinks =>
     if (!blogName) return;
 
     const followingBlog = await getIsFollowing(blogName, blogCardLink);
-    if (!followingBlog) return;
+    const isFollowingYou = await getIsFollowingYou(blogName);
+    const isMutual = followingBlog && isFollowingYou;
 
-    const isMutual = await getIsFollowingYou(blogName);
-    if (isMutual) {
-      const icon = createIcon(blogName);
-      !aprilFools && icon.setAttribute('fill', blogCardLink.style.color);
+    if (isFollowingYou) {
+      const icon = createIcon(blogName, isMutual);
+      const blue = isMutual && aprilFools;
+      blue || icon.setAttribute('fill', blogCardLink.style.color);
       blogCardLink.before(icon);
     }
   });
