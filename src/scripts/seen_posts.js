@@ -1,9 +1,11 @@
 import { filterPostElements, postSelector } from '../util/interface.js';
 import { getPreferences } from '../util/preferences.js';
 import { onNewPosts } from '../util/mutations.js';
+import { keyToCss } from '../util/css_map.js';
 
 const excludeClass = 'xkit-seen-posts-done';
-const timeline = /\/v2\/timeline\/dashboard/;
+const lengthenedClass = 'xkit-seen-posts-lengthened';
+const timeline = '/v2/timeline/dashboard';
 const includeFiltered = true;
 
 const dimClass = 'xkit-seen-posts-seen';
@@ -40,7 +42,16 @@ const markAsSeen = (articleElement) => {
   browser.storage.local.set({ [storageKey]: seenPosts });
 };
 
+const lengthenTimelines = () =>
+  [...document.querySelectorAll(`[data-timeline="${timeline}"]`)].forEach(timelineElement => {
+    if (!timelineElement.querySelector(keyToCss('manualPaginatorButtons'))) {
+      timelineElement.classList.add(lengthenedClass);
+    }
+  });
+
 const dimPosts = function (postElements) {
+  lengthenTimelines();
+
   for (const postElement of filterPostElements(postElements, { excludeClass, timeline, includeFiltered })) {
     const { id } = postElement.dataset;
 
@@ -101,6 +112,7 @@ export const clean = async function () {
   $(`.${hideClass}`).removeClass(hideClass);
   $(`.${dimClass}`).removeClass(dimClass);
   $(`.${onlyDimAvatarsClass}`).removeClass(onlyDimAvatarsClass);
+  $(`.${lengthenedClass}`).removeClass(lengthenedClass);
 };
 
 export const stylesheet = true;
