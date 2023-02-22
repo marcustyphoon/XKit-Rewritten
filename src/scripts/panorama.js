@@ -1,5 +1,6 @@
 import { keyToCss } from '../util/css_map.js';
 import { buildStyle } from '../util/interface.js';
+import { pageModifications } from '../util/mutations.js';
 import { getPreferences } from '../util/preferences.js';
 
 const minSize = 300;
@@ -65,6 +66,16 @@ const modalSidebarSpacing = 20;
 
 const minModalWidthWithSidebar = modalSidebarWidth + modalSidebarSpacing * 5;
 
+const aspectRatioVariable = '--panorama-aspect-ratio';
+
+const processVideoIframes = iframes => iframes.forEach(iframe => {
+  const { maxWidth, height } = iframe.style;
+  iframe.style.setProperty(
+    aspectRatioVariable,
+    `${maxWidth.replace('px', '')} / ${height.replace('px', '')}`
+  );
+});
+
 export const main = async () => {
   const { maxPostWidth: maxPostWidthPref } = await getPreferences('panorama');
 
@@ -73,7 +84,17 @@ export const main = async () => {
     .replace('%', 'vw')
     .replace(/^(\d+)$/, '$&px') || '100vw';
 
+  pageModifications.register(
+    `${keyToCss('videoBlock')} iframe[style*="max-width"][style*="height"]`,
+    processVideoIframes
+  );
+
   styleElement.textContent = `
+     iframe[style*="${aspectRatioVariable}"] {
+      aspect-ratio: var(${aspectRatioVariable});
+      height: unset !important;
+    }
+
     ${container} {
       justify-content: center;
     }
@@ -197,4 +218,11 @@ export const main = async () => {
   document.documentElement.append(...styleElements);
 };
 
-export const clean = async () => styleElements.forEach(el => el.remove());
+export const clean = async () => {
+  styleElements.forEach(el => el.remove());
+
+  pageModifications.unregister(processVideoIframes);
+  [...document.querySelectorAll(`iframe[style*="${aspectRatioVariable}"]`)].forEach(el =>
+    el.style.removeProperty(aspectRatioVariable)
+  );
+};
