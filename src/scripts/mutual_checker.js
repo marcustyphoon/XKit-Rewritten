@@ -90,7 +90,7 @@ const processPosts = function (postElements) {
 
 const processBlogCardLinks = blogCardLinks =>
   blogCardLinks.forEach(async blogCardLink => {
-    const blogName = blogCardLink?.textContent;
+    const blogName = blogCardLink.querySelector(keyToCss('blogLinkShort'))?.textContent || blogCardLink?.textContent;
     if (!blogName) return;
 
     const followingBlog = await getIsFollowing(blogName, blogCardLink);
@@ -140,7 +140,7 @@ export const main = async function () {
   aprilFools = (today.getMonth() === 3 && today.getDate() === 1);
 
   onNewPosts.addListener(processPosts);
-  pageModifications.register(`${keyToCss('blogCardBlogLink')} > a`, processBlogCardLinks);
+  pageModifications.register(`${keyToCss('blogCard')} ${keyToCss('blogCardBlogLink')} > a`, processBlogCardLinks);
 };
 
 export const clean = async function () {
