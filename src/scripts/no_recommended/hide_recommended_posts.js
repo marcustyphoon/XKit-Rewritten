@@ -1,13 +1,37 @@
-import { buildStyle, filterPostElements } from '../../util/interface.js';
+import { buildStyle, filterPostElements, postSelector } from '../../util/interface.js';
 import { onNewPosts } from '../../util/mutations.js';
 import { timelineObject } from '../../util/react_props.js';
 
 const excludeClass = 'xkit-no-recommended-posts-done';
 const hiddenClass = 'xkit-no-recommended-posts-hidden';
+const unHiddenClass = 'xkit-no-recommended-posts-many';
 const timeline = /\/v2\/timeline\/dashboard/;
 const includeFiltered = true;
 
-const styleElement = buildStyle(`.${hiddenClass} article { display: none; }`);
+const styleElement = buildStyle(`
+.${hiddenClass}:not(.${unHiddenClass}) article {
+  display: none;
+}
+
+:not(.${unHiddenClass}) + .${unHiddenClass}::before {
+  content: 'Too many recommended posts to hide!';
+
+  display: block;
+  text-align: center;
+  padding: 25px 20px;
+  border-radius: 3px;
+  background-color: rgba(var(--white-on-dark), 0.13);
+  color: rgba(var(--white-on-dark), 0.6);
+  font-weight: 700;
+}
+`);
+
+const precedingHiddenPosts = ({ previousElementSibling: previousElement }, count = 0) => {
+  if (!previousElement) return count;
+  if (!previousElement.matches(postSelector)) return precedingHiddenPosts(previousElement, count);
+  if (previousElement.classList.contains(hiddenClass)) return precedingHiddenPosts(previousElement, count + 1);
+  return count;
+};
 
 const processPosts = async function (postElements) {
   filterPostElements(postElements, { excludeClass, timeline, includeFiltered }).forEach(async postElement => {
@@ -22,6 +46,10 @@ const processPosts = async function (postElements) {
     if (loggingReason === 'orbitznews') return;
 
     postElement.classList.add(hiddenClass);
+
+    if (precedingHiddenPosts(postElement) >= 10) {
+      postElement.classList.add(unHiddenClass);
+    }
   });
 };
 
