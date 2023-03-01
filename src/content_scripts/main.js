@@ -11,7 +11,7 @@
     const scriptPath = getURL(`/scripts/${name}.js`);
     const { main, clean, stylesheet, onStorageChanged } = await import(scriptPath);
 
-    main().catch(console.error);
+    main();
 
     if (stylesheet) {
       const link = Object.assign(document.createElement('link'), {
@@ -41,7 +41,7 @@
     const scriptPath = getURL(`/scripts/${name}.js`);
     const { clean, stylesheet } = await import(scriptPath);
 
-    clean().catch(console.error);
+    clean();
 
     if (stylesheet) {
       document.querySelector(`link[href="${getURL(`/scripts/${name}.css`)}"]`)?.remove();
@@ -77,6 +77,13 @@
     return installedScripts;
   };
 
+  const notifyOnError = async () => {
+    const notificationsPath = getURL('/util/notifications.js');
+    const { notify } = await import(notificationsPath);
+    window.addEventListener('error', (event) => { notify(`XKit Rewritten error: ${event.message}`); });
+    window.addEventListener('unhandledrejection', (event) => { notify(`XKit Rewritten error: ${event.reason}`); });
+  };
+
   const init = async function () {
     const [
       installedScripts,
@@ -90,6 +97,8 @@
     if (!isRedpop()) return;
 
     await waitForReactLoaded();
+
+    await notifyOnError().catch(console.error);
 
     $('style.xkit').remove();
 
