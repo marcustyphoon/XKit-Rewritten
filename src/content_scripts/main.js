@@ -109,6 +109,8 @@
 
     browser.storage.onChanged.addListener(onStorageChanged);
 
+    await Promise.all(['css_map', 'language_data', 'user'].map(name => import(getURL(`/util/${name}.js`))));
+
     installedScripts
       .filter(scriptName => enabledScripts.includes(scriptName))
       .forEach(scriptName => {
