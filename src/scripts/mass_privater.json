@@ -1,0 +1,10 @@
+{
+  "title": "Mass Privater",
+  "description": "Make some/all of your posts private",
+  "icon": {
+    "class_name": "ri-lock-2-line",
+    "color": "white",
+    "background_color": "#A45028"
+  },
+  "relatedTerms": [ "Mass Deleter" ]
+}
