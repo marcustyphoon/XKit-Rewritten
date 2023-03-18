@@ -2,7 +2,7 @@
 
 {
   const { getURL } = browser.runtime;
-  const redpop = [...document.scripts].some(({ src }) => src.includes('/pop/'));
+  const isRedpop = () => [...document.scripts].some(({ src }) => src.includes('/pop/'));
   const isReactLoaded = () => document.querySelector('[data-rh]') === null;
 
   const restartListeners = {};
@@ -78,12 +78,22 @@
   };
 
   const init = async function () {
+    const [
+      installedScripts,
+      { enabledScripts = [] }
+    ] = await Promise.all([
+      getInstalledScripts(),
+      browser.storage.local.get('enabledScripts'),
+      documentInteractive
+    ]);
+
+    if (!isRedpop()) return;
+
+    await waitForReactLoaded();
+
     $('style.xkit').remove();
 
     browser.storage.onChanged.addListener(onStorageChanged);
-
-    const installedScripts = await getInstalledScripts();
-    const { enabledScripts = [] } = await browser.storage.local.get('enabledScripts');
 
     /**
      * fixes WebKit (Chromium, Safari) simultaneous import failure of files with unresolved top level await
@@ -101,11 +111,17 @@
     Promise.all(loaded).then(() => rootNode.classList.add('xkit-loaded'));
   };
 
-  const waitForReactLoaded = () => new Promise(resolve => {
-    window.requestAnimationFrame(() => isReactLoaded() ? resolve() : waitForReactLoaded().then(resolve));
-  });
+  const waitForReactLoaded = async () => {
+    while (!isReactLoaded()) {
+      await new Promise(requestAnimationFrame);
+    }
+  };
 
-  if (redpop) {
-    isReactLoaded() ? init() : waitForReactLoaded().then(init);
-  }
+  const documentInteractive = new Promise(resolve =>
+    document.readyState === 'loading'
+      ? document.addEventListener('readystatechange', resolve, { once: true })
+      : resolve()
+  );
+
+  init();
 }
