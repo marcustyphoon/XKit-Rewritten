@@ -1,0 +1,9 @@
+{
+  "title": "Advanced Editor",
+  "description": "hax lol",
+  "icon": {
+    "class_name": "ri-pencil-ruler-line",
+    "color": "#ffffff",
+    "background_color": "#000000"
+  }
+}
