@@ -63,6 +63,11 @@
       "label": "Make following/mutuals indicators on notifications more subtle",
       "default": false
     },
+    "subtle_create_post": {
+      "type": "checkbox",
+      "label": "Make the \"create post\" button more subtle",
+      "default": false
+    },
     "hide_activity_mutuals": {
       "type": "checkbox",
       "label": "Hide following/mutuals indicators on notifications",
