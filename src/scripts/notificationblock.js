@@ -3,18 +3,51 @@ import { registerMeatballItem, unregisterMeatballItem } from '../util/meatballs.
 import { pageModifications } from '../util/mutations.js';
 import { inject } from '../util/inject.js';
 import { keyToCss } from '../util/css_map.js';
-import { showModal, hideModal, modalCancelButton } from '../util/modals.js';
+import { showModal, hideModal, modalCancelButton, modalCompleteButton } from '../util/modals.js';
 import { dom } from '../util/dom.js';
-import { userBlogNames } from '../util/user.js';
+import { userBlogNames, userBlogs } from '../util/user.js';
+import { apiFetch, navigate } from '../util/tumblr_helpers.js';
 
 const storageKey = 'notificationblock.blockedPostTargetIDs';
+const uuidsStorageKey = 'notificationblock.uuids';
+const toOpenStorageKey = 'notificationblock.toOpen';
 const meatballButtonBlockId = 'notificationblock-block';
 const meatballButtonBlockLabel = 'Block notifications';
 const meatballButtonUnblockId = 'notificationblock-unblock';
 const meatballButtonUnblockLabel = 'Unblock notifications';
 const notificationSelector = keyToCss('notification');
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 let blockedPostTargetIDs;
+let uuids = {};
+
+const userBlogsToSearch = userBlogs
+  .filter(({ posts }) => posts)
+  .sort((a, b) => b.posts - a.posts);
+
+const findUuid = async id => {
+  if (uuids[id]) return;
+  uuids[id] = false;
+  for (const { uuid } of userBlogsToSearch) {
+    const delay = sleep(500);
+    try {
+      await apiFetch(`/v2/blog/${uuid}/posts/${id}`);
+      uuids[id] = uuid;
+      break;
+    } catch (e) {
+      await delay;
+    }
+  }
+  await browser.storage.local.set({ [uuidsStorageKey]: uuids });
+};
+
+const backgroundFindUuids = async () => {
+  const idsMissingUuids = blockedPostTargetIDs.filter(id => uuids[id] === undefined).reverse();
+  for (const id of idsMissingUuids) {
+    await findUuid(id);
+  }
+};
 
 const styleElement = buildStyle();
 const buildCss = () => `:is(${
@@ -43,8 +76,9 @@ const unburyTargetPostIds = async (notificationSelector) => {
 const processNotifications = () => inject(unburyTargetPostIds, [notificationSelector]);
 
 const onButtonClicked = async function ({ currentTarget }) {
-  const { id, rebloggedRootId } = currentTarget.__timelineObjectData;
+  const { id, rebloggedRootId, blog: { uuid }, rebloggedRootUuid } = currentTarget.__timelineObjectData;
   const rootId = rebloggedRootId || id;
+  const rootUuid = rebloggedRootUuid || uuid;
   const shouldBlockNotifications = blockedPostTargetIDs.includes(rootId) === false;
 
   const title = shouldBlockNotifications
@@ -62,8 +96,18 @@ const onButtonClicked = async function ({ currentTarget }) {
     ? 'red'
     : 'blue';
   const saveNotificationPreference = shouldBlockNotifications
-    ? () => { blockedPostTargetIDs.push(rootId); browser.storage.local.set({ [storageKey]: blockedPostTargetIDs }); }
-    : () => browser.storage.local.set({ [storageKey]: blockedPostTargetIDs.filter(blockedId => blockedId !== rootId) });
+    ? () => {
+        blockedPostTargetIDs.push(rootId);
+        browser.storage.local.set({ [storageKey]: blockedPostTargetIDs });
+        uuids[rootId] = rootUuid;
+        browser.storage.local.set({ [uuidsStorageKey]: uuids });
+      }
+    : () => {
+        blockedPostTargetIDs = blockedPostTargetIDs.filter(blockedId => blockedId !== rootId);
+        browser.storage.local.set({ [storageKey]: blockedPostTargetIDs });
+        delete uuids[rootId];
+        browser.storage.local.set({ [uuidsStorageKey]: uuids });
+      };
 
   showModal({
     title,
@@ -95,7 +139,13 @@ const unblockPostFilter = async ({ id, rebloggedRootId }) => {
 };
 
 export const onStorageChanged = (changes, areaName) => {
-  if (Object.keys(changes).includes(storageKey)) {
+  const { [storageKey]: blockedPostChanges, [uuidsStorageKey]: uuidsChanges } = changes;
+
+  if (uuidsChanges) {
+    ({ newValue: uuids } = uuidsChanges);
+  }
+
+  if (blockedPostChanges) {
     blockedPostTargetIDs = changes[storageKey].newValue;
     styleElement.textContent = buildCss();
   }
@@ -103,6 +153,10 @@ export const onStorageChanged = (changes, areaName) => {
 
 export const main = async function () {
   ({ [storageKey]: blockedPostTargetIDs = [] } = await browser.storage.local.get(storageKey));
+  ({ [uuidsStorageKey]: uuids = {} } = await browser.storage.local.get(uuidsStorageKey));
+
+  backgroundFindUuids();
+
   styleElement.textContent = buildCss();
   document.documentElement.append(styleElement);
 
@@ -110,6 +164,32 @@ export const main = async function () {
 
   registerMeatballItem({ id: meatballButtonBlockId, label: meatballButtonBlockLabel, onclick: onButtonClicked, postFilter: blockPostFilter });
   registerMeatballItem({ id: meatballButtonUnblockId, label: meatballButtonUnblockLabel, onclick: onButtonClicked, postFilter: unblockPostFilter });
+
+  const { [toOpenStorageKey]: toOpen } = await browser.storage.local.get(toOpenStorageKey);
+  if (toOpen) {
+    browser.storage.local.remove(toOpenStorageKey);
+
+    const { blockedPostID } = toOpen;
+    try {
+      showModal({
+        title: 'NotificationBlock',
+        message: [`Searching for post ${blockedPostID} on your blogs. Please wait...`]
+      });
+      await findUuid(blockedPostID);
+      if (!uuids[blockedPostID]) {
+        throw new Error();
+      }
+      const { response: { blog: { name } } } = await apiFetch(`/v2/blog/${uuids[blockedPostID]}/info`);
+      hideModal();
+      navigate(`/${name}/${blockedPostID}`);
+    } catch (e) {
+      showModal({
+        title: 'NotificationBlock',
+        message: [`Failed to find and open post ${blockedPostID}! It may not be one of your original posts.`],
+        buttons: [modalCompleteButton]
+      });
+    }
+  }
 };
 
 export const clean = async function () {
