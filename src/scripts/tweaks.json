@@ -58,6 +58,11 @@
       "default": false,
       "inherit": "tweaks.preferences.subtle_follow"
     },
+    "subtle_create_post": {
+      "type": "checkbox",
+      "label": "Make the \"create post\" button more subtle",
+      "default": false
+    },
     "hide_activity_mutuals": {
       "type": "checkbox",
       "label": "Hide following/mutuals indicators on notifications",
