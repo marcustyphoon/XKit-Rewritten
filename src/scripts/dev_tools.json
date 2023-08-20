@@ -11,6 +11,11 @@
       "type": "checkbox",
       "label": "Translate CSS Map",
       "default": false
+    },
+    "advanced_editor": {
+      "type": "checkbox",
+      "label": "Enable Advanced Editor",
+      "default": false
     }
   },
   "deprecated": true
