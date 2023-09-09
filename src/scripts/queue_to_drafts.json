@@ -1,0 +1,9 @@
+{
+  "title": "Queue to Drafts",
+  "description": "",
+  "icon": {
+    "class_name": "ri-delete-back-line",
+    "color": "white",
+    "background_color": "#000000"
+  }
+}
