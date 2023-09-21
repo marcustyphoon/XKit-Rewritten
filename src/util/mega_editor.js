@@ -44,17 +44,7 @@ export const megaEdit = async function (postIds, options) {
     delete requestBody.tags;
   }
 
-  return inject(
-    async (resource, body) =>
-      fetch(resource, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-        body
-      }).then(async response =>
-        response.ok ? response.json() : Promise.reject(await response.json())
-      ),
-    [`https://www.tumblr.com/${pathname}`, $.param(requestBody)]
-  );
+  return inject('doPostForm', [`https://www.tumblr.com/${pathname}`, $.param(requestBody)]);
 };
 
 /**
@@ -87,15 +77,8 @@ export const bulkCommunityLabel = async function (blogName, postIds, options) {
     post_keys: postIds.map(id => ({ id }))
   };
 
-  return inject(
-    async (resource, body) =>
-      fetch(resource, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-        body
-      }).then(async response =>
-        response.ok ? response.json() : Promise.reject(await response.json())
-      ),
-    [`https://www.tumblr.com/svc/blog/${blogName}/bulk_community_label_posts`, $.param(requestBody)]
-  );
+  return inject('doPostForm', [
+    `https://www.tumblr.com/svc/blog/${blogName}/bulk_community_label_posts`,
+    $.param(requestBody)
+  ]);
 };
