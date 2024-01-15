@@ -1,10 +1,10 @@
-.xkit-cleanfeed-filtered figure:not([aria-label]):not(:hover),
-.xkit-cleanfeed-filtered [role="application"]:not(:hover) {
+.xkit-cleanfeed-filtered:not(:hover) figure:not([aria-label]),
+.xkit-cleanfeed-filtered:not(:hover) [role="application"] {
   position: relative;
 }
 
-.xkit-cleanfeed-filtered figure:not([aria-label]):not(:hover)::after,
-.xkit-cleanfeed-filtered [role="application"]:not(:hover)::after {
+.xkit-cleanfeed-filtered:not(:hover) figure:not([aria-label])::after,
+.xkit-cleanfeed-filtered:not(:hover) [role="application"]::after {
   position: absolute;
   top: 0;
   left: 0;
