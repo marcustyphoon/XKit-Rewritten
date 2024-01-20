@@ -8,6 +8,7 @@
   const restartListeners = {};
 
   const runScript = async function (name) {
+    console.log('running script', name);
     const scriptPath = getURL(`/scripts/${name}.js`);
     const { main, clean, stylesheet, onStorageChanged } = await import(scriptPath);
 
@@ -85,11 +86,16 @@
     const installedScripts = await getInstalledScripts();
     const { enabledScripts = [] } = await browser.storage.local.get('enabledScripts');
 
+    console.log('preload start');
+
     /**
      * fixes WebKit (Chromium, Safari) simultaneous import failure of files with unresolved top level await
      * @see https://github.com/sveltejs/kit/issues/7805#issuecomment-1330078207
      */
     await Promise.all(['css_map', 'language_data', 'user'].map(name => import(getURL(`/util/${name}.js`))));
+
+
+    console.log('preload finish');
 
     installedScripts
       .filter(scriptName => enabledScripts.includes(scriptName))
