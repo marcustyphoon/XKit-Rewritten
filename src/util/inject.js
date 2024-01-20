@@ -32,6 +32,8 @@ export const inject = async (func, args = [], target = document.documentElement)
     }
   }`]);
 
+  console.log('inject', func.name, async, script);
+
   if (async) {
     return new Promise((resolve, reject) => {
       const attributeObserver = new MutationObserver((mutations, observer) => {

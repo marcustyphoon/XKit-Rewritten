@@ -6,6 +6,8 @@ import { inject } from './inject.js';
  * @returns {Promise<Response|Error>} Resolves or rejects with result of window.tumblr.apiFetch()
  */
 export const apiFetch = async function (...args) {
+  console.log('apiFetch', args);
+
   return inject(
     async (resource, init = {}) => {
       // add XKit header to all API requests
