@@ -107,6 +107,11 @@
       "type": "checkbox",
       "label": "Hide the \"Now, where were we?\" button",
       "default": false
+    },
+    "disable_scroll_bouncing": {
+      "type": "checkbox",
+      "label": "Disable scroll bouncing",
+      "default": false
     }
   }
 }
