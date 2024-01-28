@@ -68,11 +68,8 @@
   };
 
   const getInstalledScripts = async function () {
-    const url = getURL('/scripts/_index.json');
-    const file = await fetch(url);
-    const installedScripts = await file.json();
-
-    return installedScripts;
+    const module = await import('../scripts/_index.json');
+    return module.default;
   };
 
   const init = async function () {

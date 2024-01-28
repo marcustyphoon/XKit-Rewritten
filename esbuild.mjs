@@ -10,7 +10,7 @@ const options = {
     copy({
       assets: {
         from: [
-          './src/**/*.json',
+          './src/manifest.json',
           './src/**/*.html',
           './src/**/*.png',
           './src/**/*.css',

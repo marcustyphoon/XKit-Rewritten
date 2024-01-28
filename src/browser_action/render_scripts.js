@@ -2,14 +2,9 @@ const configSection = document.getElementById('configuration');
 const configSectionLink = document.querySelector('a[href="#configuration"]');
 const scriptsDiv = configSection.querySelector('.scripts');
 
-const { getURL } = browser.runtime;
-
 const getInstalledScripts = async function () {
-  const url = getURL('/scripts/_index.json');
-  const file = await fetch(url);
-  const installedScripts = await file.json();
-
-  return installedScripts;
+  const module = await import('../scripts/_index.json');
+  return module.default;
 };
 
 const writeEnabled = async function ({ currentTarget }) {
@@ -137,9 +132,8 @@ const renderScripts = async function () {
   const disabledScripts = installedScripts.filter(scriptName => enabledScripts.includes(scriptName) === false);
 
   for (const scriptName of [...orderedEnabledScripts, ...disabledScripts]) {
-    const url = getURL(`/scripts/${scriptName}.json`);
-    const file = await fetch(url);
-    const { title = scriptName, description = '', icon = {}, help = '', relatedTerms = [], preferences = {}, deprecated = false } = await file.json();
+    const module = await import(`../scripts/${scriptName}.json`);
+    const { title = scriptName, description = '', icon = {}, help = '', relatedTerms = [], preferences = {}, deprecated = false } = module.default;
 
     const scriptTemplateClone = document.getElementById('script').content.cloneNode(true);
 

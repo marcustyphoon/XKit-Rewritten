@@ -3,9 +3,8 @@
  * @returns {Promise<object>} The script's preference values
  */
 export const getPreferences = async function (scriptName) {
-  const scriptManifestURL = browser.runtime.getURL(`/scripts/${scriptName}.json`);
-  const scriptManifestFile = await fetch(scriptManifestURL);
-  const scriptManifest = await scriptManifestFile.json();
+  const scriptManifestModule = await import(`../scripts/${scriptName}.json`);
+  const scriptManifest = scriptManifestModule.default;
   const storage = await browser.storage.local.get();
 
   const { preferences = {} } = scriptManifest;
