@@ -5,7 +5,9 @@
     "test": "web-ext lint",
     "posttest": "eslint src/",
     "start": "web-ext run",
-    "build": "web-ext build"
+    "build": "web-ext build",
+    "esbuild": "rimraf dist && node esbuild.mjs",
+    "esbuildWatch": "rimraf dist && node esbuild.mjs --watch"
   },
   "devDependencies": {
     "chrome-webstore-upload-cli": "^3.1.0",
@@ -19,10 +21,13 @@
     "web-ext": "^7.9.0"
   },
   "dependencies": {
+    "esbuild": "^0.20.0",
+    "esbuild-plugin-copy": "^2.1.1",
     "jquery": "^3.7.1",
     "moment": "^2.30.1",
     "normalize.css": "^8.0.1",
     "remixicon": "^3.7.0",
+    "rimraf": "^5.0.5",
     "spectrum-colorpicker": "^1.8.1",
     "webextension-polyfill": "^0.10.0"
   },
