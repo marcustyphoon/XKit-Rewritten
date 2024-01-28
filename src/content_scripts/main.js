@@ -79,16 +79,21 @@
 
   const notifyOnError = () => {
     const notificationsPath = getURL('/util/notifications.js');
-    const notificationsUtilPromise = import(notificationsPath);
-    window.addEventListener('error', async event => {
-      const { notify } = await notificationsUtilPromise;
-      event.message === 'ResizeObserver loop completed with undelivered notifications.' ||
-        notify(`error: ${event.message}`);
-    });
-    window.addEventListener('unhandledrejection', async event => {
-      const { notify } = await notificationsUtilPromise;
-      notify(`error: ${event.reason}`);
-    });
+
+    window.addEventListener(
+      'error',
+      event =>
+        event.message === 'ResizeObserver loop completed with undelivered notifications.' ||
+        import(notificationsPath)
+          .then(({ notify }) => notify(`error: ${event.message}`))
+          .catch(() => {})
+    );
+
+    window.addEventListener('unhandledrejection', event =>
+      import(notificationsPath)
+        .then(({ notify }) => notify(`error: ${event.reason}`))
+        .catch(() => {})
+    );
   };
 
   const init = async function () {
