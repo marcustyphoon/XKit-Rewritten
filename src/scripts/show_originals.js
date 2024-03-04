@@ -7,6 +7,7 @@ import { translate } from '../util/language_data.js';
 import { userBlogs } from '../util/user.js';
 
 const hiddenAttribute = 'data-show-originals-hidden';
+const originalAttribute = 'data-show-originals-original';
 const whitelistedAttribute = 'data-show-originals-whitelisted';
 const lengthenedClass = 'xkit-show-originals-lengthened';
 const controlsClass = 'xkit-show-originals-controls';
@@ -52,13 +53,14 @@ const addControls = async (timelineElement, location) => {
 
   const onButton = createButton(translate('Original Posts'), handleClick, 'on');
   const forceOnButton = createButton(translate('Original Posts'), handleClick, 'force-on');
+  const reverseButton = createButton(translate('Reblogs'), handleClick, 'reverse');
   const offButton = createButton(translate('All posts'), handleClick, 'off');
 
   if (location === 'disabled') {
-    controls.append(forceOnButton, offButton);
+    controls.append(forceOnButton, reverseButton, offButton);
     controls.dataset.showOriginals = 'off';
   } else {
-    controls.append(onButton, offButton);
+    controls.append(onButton, reverseButton, offButton);
 
     const { [storageKey]: savedModes = {} } = await browser.storage.local.get(storageKey);
     const mode = savedModes[location] ?? 'on';
@@ -102,9 +104,10 @@ const processPosts = async function (postElements) {
       const { rebloggedRootId, content, blogName, rebloggedFromFollowing } = await timelineObject(postElement);
       const myPost = await isMyPost(postElement);
 
-      if (!rebloggedRootId) { return; }
-      if (showReblogsWithContributedContent && content.length > 0) { return; }
-      if (showReblogsOfNotFollowing && !rebloggedFromFollowing) { return; }
+      if (!rebloggedRootId || (showReblogsWithContributedContent && content.length > 0) || (showReblogsOfNotFollowing && !rebloggedFromFollowing)) {
+        getTimelineItemWrapper(postElement).setAttribute(originalAttribute, '');
+        return;
+      }
 
       getTimelineItemWrapper(postElement).setAttribute(
         (showOwnReblogs && myPost) || disabledBlogs.includes(blogName)
