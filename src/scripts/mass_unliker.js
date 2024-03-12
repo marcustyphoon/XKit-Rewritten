@@ -78,7 +78,7 @@ const unlikePosts = async function () {
     remainingElement.textContent = `Estimated time remaining: ${constructDurationString(likes.length - unlikedCount - failureCount)}`;
     try {
       await Promise.all([
-        apiFetch('/v2/user/unlike', { method: 'POST', body: { id, reblog_key: reblogKey } }),
+        // apiFetch('/v2/user/unlike', { method: 'POST', body: { id, reblog_key: reblogKey } }),
         sleep(1000)
       ]);
       unlikedCount++;
