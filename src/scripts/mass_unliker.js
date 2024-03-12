@@ -34,7 +34,7 @@ const unlikePosts = async function () {
     unlikeStatusElement.textContent = `Unliking post with ID ${id}...`;
     try {
       await Promise.all([
-        apiFetch('/v2/user/unlike', { method: 'POST', body: { id, reblog_key: reblogKey } }),
+        // apiFetch('/v2/user/unlike', { method: 'POST', body: { id, reblog_key: reblogKey } }),
         sleep(1000)
       ]);
       unlikedCount++;
