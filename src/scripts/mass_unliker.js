@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { addSidebarItem, removeSidebarItem } from '../util/sidebar.js';
 import { showModal, modalCancelButton, modalCompleteButton, showErrorModal } from '../util/modals.js';
 import { apiFetch } from '../util/tumblr_helpers.js';
@@ -34,7 +35,7 @@ const unlikePosts = async function () {
     unlikeStatusElement.textContent = `Unliking post with ID ${id}...`;
     try {
       await Promise.all([
-        apiFetch('/v2/user/unlike', { method: 'POST', body: { id, reblog_key: reblogKey } }),
+        // apiFetch('/v2/user/unlike', { method: 'POST', body: { id, reblog_key: reblogKey } }),
         sleep(1000)
       ]);
       unlikedCount++;
