@@ -1,4 +1,4 @@
-import { cssMap, keyToCss } from '../../util/css_map.js';
+import { cssMap, keyToCss } from '../../utils/css_map.js';
 const rootNode = document.getElementById('root');
 
 const addedNodesPool = [];
