@@ -7,6 +7,15 @@ import { onNewPosts } from '../../util/mutations.js';
 import { notify } from '../../util/notifications.js';
 import { timelineObject } from '../../util/react_props.js';
 import { apiFetch, createEditRequestBody } from '../../util/tumblr_helpers.js';
+import hljs from '../../lib/highlight.js/core.min.js';
+import json from '../../lib/highlight.js/json.min.js';
+
+hljs.registerLanguage('json', json);
+
+const highlightStyleElement = dom('link', {
+  rel: 'stylesheet',
+  href: browser.runtime.getURL('/lib/highlight.js/vs2015.min.css')
+});
 
 const debounce = (func, ms) => {
   let timeoutID;
@@ -54,16 +63,19 @@ const onButtonClicked = async function ({ currentTarget: controlButton }) {
   );
   const { content = [] } = postData;
 
-  const textarea = dom(
-    'textarea',
+  const codeElement = dom(
+    'code',
     {
+      contenteditable: true,
+      class: 'language-json',
       style: `
         min-width: 476px;
         min-height: 300px;
-        font-family: monospace;
-        border-radius: 1px;
-        background: RGB(var(--white));
-        color: RGB(var(--black));
+        max-height: 80vh;
+
+        font-size: 1rem;
+        text-align: start;
+        white-space: pre-wrap;
       `,
       // textarea cannot be focused without this if opened over the blog view modal
       'data-skip-glass-focus-trap': true
@@ -71,9 +83,24 @@ const onButtonClicked = async function ({ currentTarget: controlButton }) {
     null,
     [JSON.stringify(content, null, 2)]
   );
+  const preElement = dom('pre', null, null, [codeElement]);
+
+  const formatContent = () => {
+    try {
+      codeElement.textContent = JSON.stringify(JSON.parse(codeElement.textContent), null, 2);
+    } catch (e) {}
+
+    try {
+      delete codeElement.dataset.highlighted;
+      hljs.highlightElement(codeElement);
+    } catch (e) {}
+  };
+
+  formatContent();
+  const formatButton = dom('button', null, { click: formatContent }, ['Format JSON']);
 
   const getContent = () => {
-    const content = JSON.parse(textarea.value);
+    const content = JSON.parse(codeElement.textContent);
     if (!Array.isArray(content)) throw new Error('Content must be an array');
     if (!content.every(block => typeof block.type === 'string')) {
       throw new Error('Content block is missing a type');
@@ -113,22 +140,26 @@ const onButtonClicked = async function ({ currentTarget: controlButton }) {
   const checkValidity = () => {
     try {
       getContent();
-      textarea.style.outline = '';
+      preElement.style.outline = '';
       submitButton.disabled = false;
     } catch (e) {
-      textarea.style.outline = '5px solid rgb(255, 0, 0, 0.7)';
+      preElement.style.outline = '5px solid rgb(255, 0, 0, 0.7)';
       submitButton.disabled = true;
     }
   };
 
   checkValidity();
-  textarea.addEventListener('input', debounce(checkValidity, 100));
+  preElement.addEventListener('input', debounce(checkValidity, 100));
+
+  const cancelButton = dom('button', { class: 'red' }, { click: hideModal }, ['Cancel']);
 
   showModal({
     title: 'Edit post content JSON',
-    message: [textarea],
-    buttons: [modalCancelButton, submitButton]
+    message: [preElement],
+    buttons: [cancelButton, formatButton, submitButton]
   });
+
+  preElement.parentElement.style.maxWidth = '80vw';
 };
 
 const processPosts = postElements =>
@@ -154,10 +185,12 @@ const processPosts = postElements =>
 
 export const main = async function () {
   controlButtonTemplate = createControlButtonTemplate(symbolId, buttonClass, 'Edit JSON');
+  document.documentElement.append(highlightStyleElement);
   onNewPosts.addListener(processPosts);
 };
 
 export const clean = async function () {
   onNewPosts.removeListener(processPosts);
+  highlightStyleElement.remove();
   $(`.${buttonClass}`).remove();
 };
