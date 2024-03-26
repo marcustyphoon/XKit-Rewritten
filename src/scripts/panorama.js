@@ -5,8 +5,8 @@ import { getPreferences } from '../util/preferences.js';
 
 const navigationWrapperBasis = 240;
 const navigationWrapperMargin = 20;
-const mainContentWrapperBasis = 966;
-const mainStyleMinWidth = navigationWrapperBasis + navigationWrapperMargin + mainContentWrapperBasis;
+const mainContentWrapperMinWidth = 902;
+const mainStyleMinWidth = navigationWrapperBasis + navigationWrapperMargin + mainContentWrapperMinWidth;
 
 const sidebarMaxWidth = 320;
 const mainRightPadding = 20;
