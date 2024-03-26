@@ -41,40 +41,36 @@ ${postColumn}
   ) {
   width: unset !important;
 }
-${keyToCss('queueSettings')} {
-  box-sizing: border-box;
-  width: 100%;
-}
-iframe[style*="${aspectRatioVar}"] {
+${postColumn} iframe[style*="${aspectRatioVar}"] {
   aspect-ratio: var(${aspectRatioVar});
   height: unset !important;
 }
 `;
 
 const mainContentWrapper = `${keyToCss('mainContentWrapper')}:not(${keyToCss('mainContentIsMasonry', 'mainContentIsFullWidth')})`;
-const container = `${mainContentWrapper} > div`;
-const mainElement = `${container} > div`;
-const mainPostColumn = `${mainElement} > main${keyToCss('postColumn', 'postsColumn')}`;
-
+const mainPostColumn = `main${keyToCss('postColumn', 'postsColumn')}`;
 const mainStyleElement = buildStyle(`
-${mainContentWrapper} {
+${mainContentWrapper}:has(> div > div > ${mainPostColumn}) {
   flex-grow: 1;
   max-width: calc(var(${maxPostWidthVar}) + ${sidebarOffset}px);
 }
-${container} {
+${mainContentWrapper} > div:has(> div > ${mainPostColumn}) {
   max-width: unset;
 }
-${mainElement} {
+${mainContentWrapper} > div > div:has(> ${mainPostColumn}) {
   max-width: calc(100% - ${sidebarOffset}px);
 }
-${mainPostColumn} {
+${mainContentWrapper} > div > div > ${mainPostColumn} {
   max-width: 100%;
+}
+${keyToCss('queueSettings')} {
+  box-sizing: border-box;
+  width: 100%;
 }
 ` + createPostStyles(mainPostColumn));
 mainStyleElement.media = `(min-width: ${mainStyleMinWidth}px)`;
 
 const patioPostColumn = `[id]${keyToCss('columnWide')}`;
-
 const patioStyleElement = buildStyle(`
 ${patioPostColumn} {
   width: min(var(${maxPostWidthVar}), 100vw);
