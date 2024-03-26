@@ -13,37 +13,56 @@ const mainRightPadding = 20;
 const mainRightBorder = 1;
 const sidebarOffset = sidebarMaxWidth + mainRightPadding + mainRightBorder;
 
-const maxPostWidthVar = '--panorama-post-width';
-const aspectRatioVar = '--panorama-aspect-ratio';
+const expandClass = 'xkit-panorama-expand-media';
+const maxPostWidthVar = '--xkit-panorama-post-width';
+const aspectRatioVar = '--xkit-panorama-aspect-ratio';
 
-const createPostStyles = postColumn => `
-${postColumn}
+const createPostStyles = column => `
+${column}
   :is(
     ${keyToCss('cell')},
     article,
     article > header,
-    article ${keyToCss('reblog', 'videoBlock', 'audioBlock', 'link')}
+    article ${keyToCss('reblog')}
   ) {
-  max-width: 100%;
+  max-width: unset;
 }
 
-${postColumn} article [role="link"] > a > ${keyToCss('withImage')} {
-  height: unset;
-  aspect-ratio: 2;
-}
-${postColumn} article ${keyToCss('videoBlock')} iframe {
-  max-width: none !important;
-}
-${postColumn}
+/* Center non-expanded content */
+body:not(.${expandClass}) ${column}
   :is(
+    ${keyToCss('videoBlock', 'audioBlock', 'link', 'pollBlock')},
+    figure${keyToCss('imageBlock')}:not(${keyToCss('unstretched')})
+  ) {
+  margin: 0 auto;
+  max-width: 540px;
+}
+
+/* Widen + lock aspect ratios of expanded content */
+body.${expandClass} ${column}
+  :is(
+    ${keyToCss('videoBlock', 'audioBlock', 'link', 'pollBlock')},
+    ${keyToCss('videoBlock')} iframe
+  ) {
+  max-width: unset !important;
+}
+body.${expandClass} ${column} ${keyToCss('videoBlock')} iframe[style*="${aspectRatioVar}"] {
+  aspect-ratio: var(${aspectRatioVar});
+  height: unset !important;
+}
+body.${expandClass} ${column} a > ${keyToCss('withImage')} {
+  aspect-ratio: 2;
+  height: unset !important;
+}
+
+/* Fix ad containers */
+${column}
+  :is(
+    header:has(+ [data-is-resizable="true"][style="width: 540px;"]),
     [data-is-resizable="true"][style="width: 540px;"],
     ${keyToCss('takeoverBanner')}
   ) {
   width: unset !important;
-}
-${postColumn} iframe[style*="${aspectRatioVar}"] {
-  aspect-ratio: var(${aspectRatioVar});
-  height: unset !important;
 }
 `;
 
@@ -70,12 +89,12 @@ ${keyToCss('queueSettings')} {
 ` + createPostStyles(mainPostColumn));
 mainStyleElement.media = `(min-width: ${mainStyleMinWidth}px)`;
 
-const patioPostColumn = `[id]${keyToCss('columnWide')}`;
+const patioWidePostColumn = `[id]${keyToCss('columnWide')}`;
 const patioStyleElement = buildStyle(`
-${patioPostColumn} {
+${patioWidePostColumn} {
   width: min(var(${maxPostWidthVar}), 100vw);
 }
-` + createPostStyles(patioPostColumn));
+` + createPostStyles(patioWidePostColumn));
 
 const processVideoIframes = iframes => iframes.forEach(iframe => {
   const { maxWidth, height } = iframe.style;
@@ -91,10 +110,11 @@ export const onStorageChanged = async (changes, areaName) =>
   Object.keys(changes).some(key => key.startsWith('panorama')) && main();
 
 export const main = async () => {
-  const { maxPostWidth: maxPostWidthString } = await getPreferences('panorama');
-  const maxPostWidth = Number(maxPostWidthString.trim().replace('px', '')) || 0;
+  const { maxPostWidth: maxPostWidthString, expandPostMedia } = await getPreferences('panorama');
 
+  const maxPostWidth = Number(maxPostWidthString.trim().replace('px', '')) || 0;
   document.body.style.setProperty(maxPostWidthVar, `${Math.max(maxPostWidth, 540)}px`);
+  document.body.classList[expandPostMedia ? 'add' : 'remove'](expandClass);
 
   document.documentElement.append(mainStyleElement, patioStyleElement);
 
@@ -111,6 +131,7 @@ export const clean = async () => {
   );
 
   document.body.style.removeProperty(maxPostWidthVar);
+  document.body.classList.remove(expandClass);
 
   mainStyleElement.remove();
   patioStyleElement.remove();
