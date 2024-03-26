@@ -25,7 +25,7 @@ const debounce = (func, ms) => {
   };
 };
 
-const symbolId = 'ri-pencil-ruler-line';
+const symbolId = 'ri-braces-line';
 const buttonClass = 'xkit-json-editor-button';
 
 const controlIconSelector = keyToCss('controlIcon');
