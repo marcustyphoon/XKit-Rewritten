@@ -16,6 +16,16 @@
       "type": "checkbox",
       "label": "Enable JSON Editor",
       "default": false
+    },
+    "code_insert": {
+      "type": "checkbox",
+      "label": "Enable Code Block Insertion",
+      "default": false
+    },
+    "code_unbold": {
+      "type": "checkbox",
+      "label": "Enable Code Block Bold Removal",
+      "default": false
     }
   },
   "deprecated": true
