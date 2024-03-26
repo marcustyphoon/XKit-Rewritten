@@ -71,11 +71,11 @@ const addControls = async (timelineElement, location) => {
 const getLocation = timelineElement => {
   const { timeline, which } = timelineElement.dataset;
 
-  const isBlog = blogTimelineRegex.test(timeline) && !timelineElement.matches(channelSelector);
+  const isBlog = blogTimelineRegex.test(timeline);
 
   const on = {
     dashboard: timeline === '/v2/timeline/dashboard',
-    disabled: isBlog && disabledBlogs.some(name => timeline === `/v2/blog/${name}/posts`),
+    disabled: isBlog && (disabledBlogs.some(name => timeline === `/v2/blog/${name}/posts`) || timelineElement.matches(channelSelector)),
     peepr: isBlog,
     blogSubscriptions: timeline.includes('blog_subscriptions') || which === 'blog_subscriptions'
   };
