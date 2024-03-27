@@ -86,7 +86,10 @@ body.${expandClass} ${postSelector} a > ${keyToCss('withImage')} {
 }
 
 /* Fix ad containers */
-header:has(+ [data-is-resizable="true"][style="width: 540px;"]),
+${keyToCss('adTimelineObject', 'instreamAd', 'nativeIponWebAd', 'takeoverBanner')},
+${keyToCss('adTimelineObject', 'instreamAd', 'nativeIponWebAd', 'takeoverBanner')} header {
+  max-width: unset;
+}
 [data-is-resizable="true"][style="width: 540px;"],
 ${keyToCss('takeoverBanner')} {
   width: unset !important;
