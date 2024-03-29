@@ -241,7 +241,7 @@ const privatePosts = async ({ uuid, name, tags, before }) => {
     if (privateStatus.textContent === '') privateStatus.textContent = '\nPrivating posts...';
 
     await Promise.all([
-      megaEdit(postIds, { mode: 'private' }).then(() => {
+      /* megaEdit(postIds, { mode: 'private' }) */ Promise.resolve().then(() => {
         privatedCount += postIds.length;
       }).catch(() => {
         privatedFailCount += postIds.length;
