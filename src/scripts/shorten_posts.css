@@ -12,8 +12,6 @@
   overflow-y: hidden;
   overflow-y: clip;
   max-height: var(--shortened-post-height);
-
-  isolation: isolate;
 }
 
 button.xkit-shorten-posts-expand {
