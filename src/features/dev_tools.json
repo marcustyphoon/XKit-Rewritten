@@ -7,6 +7,11 @@
     "background_color": "#000000"
   },
   "preferences": {
+    "test": {
+      "type": "checkbox",
+      "label": "Test",
+      "default": false
+    },
     "css_map": {
       "type": "checkbox",
       "label": "Translate CSS Map",
