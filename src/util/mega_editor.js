@@ -1,6 +1,27 @@
 import { inject } from './inject.js';
 
-let formKey;
+const formKeyPromise = fetch('https://www.tumblr.com/neue_web/iframe/new/text').then(response => {
+  if (response.ok) {
+    return response.text();
+  } else {
+    throw Object.assign(new Error(response.status), { response });
+  }
+}).then(responseText => {
+  const responseDocument = (new DOMParser()).parseFromString(responseText, 'text/html');
+  return responseDocument.getElementById('tumblr_form_key').getAttribute('content');
+}).catch(console.error);
+
+const postRequest = (resource, requestBody) => inject(
+  async (resource, body) =>
+    fetch(resource, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body
+    }).then(async response =>
+      response.ok ? response.json() : Promise.reject(await response.json())
+    ),
+  [resource, $.param(requestBody)]
+);
 
 const pathnames = {
   add: 'add_tags_to_posts',
@@ -23,16 +44,7 @@ const pathnames = {
 export const megaEdit = async function (postIds, options) {
   const pathname = pathnames[options.mode];
 
-  formKey ??= await fetch('https://www.tumblr.com/neue_web/iframe/new/text').then(response => {
-    if (response.ok) {
-      return response.text();
-    } else {
-      throw Object.assign(new Error(response.status), { response });
-    }
-  }).then(responseText => {
-    const responseDocument = (new DOMParser()).parseFromString(responseText, 'text/html');
-    return responseDocument.getElementById('tumblr_form_key').getAttribute('content');
-  }).catch(console.error);
+  const formKey = await formKeyPromise;
 
   const requestBody = {
     post_ids: postIds.join(','),
@@ -44,15 +56,35 @@ export const megaEdit = async function (postIds, options) {
     delete requestBody.tags;
   }
 
-  return inject(
-    async (resource, body) =>
-      fetch(resource, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-        body
-      }).then(async response =>
-        response.ok ? response.json() : Promise.reject(await response.json())
-      ),
-    [`https://www.tumblr.com/${pathname}`, $.param(requestBody)]
+  return postRequest(
+    `https://www.tumblr.com/${pathname}`,
+    requestBody
+  );
+};
+
+/**
+ * @param {string} blogName - The name of the blog to edit posts on
+ * @param {string[]} postIds - Array of post IDs to edit (must not exceed 100 items)
+ * @param {object} options - Configuration object
+ * @param {boolean} options.hasCommunityLabel - Whether the posts should have a community label
+ * @param {string[]} options.categories - valid modes are:
+ *                                 1. "drug_use"
+ *                                 2. "violence"
+ *                                 3. "sexual_themes"
+ * @returns {Promise<Response>} Response from constructed request
+ */
+export const bulkCommunityLabel = async function (blogName, postIds, options) {
+  const formKey = await formKeyPromise;
+
+  const requestBody = {
+    form_key: formKey,
+    has_community_label: options.hasCommunityLabel,
+    categories: options.categories,
+    post_keys: postIds.map(id => ({ id }))
+  };
+
+  return postRequest(
+    `https://www.tumblr.com/svc/blog/${blogName}/bulk_community_label_posts`,
+    requestBody
   );
 };
