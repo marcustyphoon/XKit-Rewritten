@@ -1,0 +1,9 @@
+{
+  "title": "Capitalism",
+  "description": "Money can be exchanged for g",
+  "icon": {
+    "class_name": "ri-money-dollar-circle-line",
+    "color": "#ffffff",
+    "background_color": "#0a9d2d"
+  }
+}
