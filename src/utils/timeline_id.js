@@ -51,3 +51,8 @@ export const tagTimelineFilter = tag =>
     timeline === `/v2/hubs/${encodeURIComponent(tag)}/timeline` ||
     timelineId?.startsWith(`hubsTimeline-${tag}-recent-`) ||
     timelineId?.match(exactly(`tag-${uuidV4}-${tag}-recent`));
+
+export const searchTimelineFilter = search =>
+  ({ dataset: { timeline, timelineId } }) =>
+    timelineId === `searchTimeline-post-${search}-recent-0-undefined-undefined-undefined` ||
+    timelineId?.match(exactly(`search-${uuidV4}-${search}-recent--0`));
