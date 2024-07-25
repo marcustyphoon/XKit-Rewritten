@@ -127,13 +127,22 @@ const processPosts = async function (postElements) {
 };
 
 export const onStorageChanged = async (changes, areaName) => {
-  if (Object.keys(changes).includes(storageKey)) {
-    timestamps = changes[storageKey].newValue;
-  }
-  if (Object.keys(changes).some(key => key.startsWith('search_tracking_plus.preferences'))) {
-    const { onlyShowNew } = await getPreferences('search_tracking_plus');
+  const {
+    'search_tracking_plus.preferences.trackedSearches': trackedSearchesChanges,
+    'search_tracking_plus.preferences.onlyShowNew': onlyShowNewChanges,
+    [storageKey]: timestampsChanges
+  } = changes;
 
-    sidebarItem.dataset.onlyShowNew = onlyShowNew;
+  if (trackedSearchesChanges) {
+    clean().then(main);
+    return;
+  }
+
+  if (timestampsChanges) {
+    timestamps = timestampsChanges.newValue;
+  }
+  if (onlyShowNewChanges) {
+    sidebarItem.dataset.onlyShowNew = onlyShowNewChanges.newValue;
   }
 };
 
