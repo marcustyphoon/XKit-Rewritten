@@ -1,0 +1,3 @@
+#egg-tracking-plus > h1::after {
+  content: "EggsKit";
+}

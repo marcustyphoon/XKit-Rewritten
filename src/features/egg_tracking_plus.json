@@ -1,0 +1,9 @@
+{
+  "title": "Egg Tracking+",
+  "description": "Egg.",
+  "icon": {
+    "class_name": "ri-shopping-basket-line",
+    "color": "white",
+    "background_color": "#ff83cb"
+  }
+}
