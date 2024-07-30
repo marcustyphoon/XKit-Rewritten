@@ -1,6 +1,6 @@
-import { modalCompleteButton, showErrorModal, showModal } from '../../util/modals.js';
-import { addSidebarItem, removeSidebarItem } from '../../util/sidebar.js';
-import { apiFetch } from '../../util/tumblr_helpers.js';
+import { modalCompleteButton, showErrorModal, showModal } from '../../utils/modals.js';
+import { addSidebarItem, removeSidebarItem } from '../../utils/sidebar.js';
+import { apiFetch } from '../../utils/tumblr_helpers.js';
 
 const doIt = async () => {
   console.log(await apiFetch('/v2/user/likes'));
