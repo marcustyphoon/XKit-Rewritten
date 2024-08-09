@@ -2,14 +2,16 @@
 import '../lib/riff-chunks.min.js';
 
 /**
- * @param {ArrayBuffer} imageData - Binary image data
- * @returns {boolean} - Whether the data is an animated WebP
+ * @param {Element} url - WebP image url
+ * @returns {boolean} - Whether the image is an animated
  */
-export function isAnimatedWebP (imageData) {
+export async function isAnimatedWebP (url) {
   try {
+    const imageData = await fetch(url).then(response => response.arrayBuffer());
+
     const { format, subChunks } = riffChunks.riffChunks(new Uint8Array(imageData));
     return format === 'WEBP' && subChunks.some(({ chunkId }) => chunkId === 'ANIM');
-  } catch (e) {
+  } catch {
     return false;
   }
 }

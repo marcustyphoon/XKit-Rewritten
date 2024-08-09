@@ -70,10 +70,9 @@ const addLabel = (element, inside = false) => {
 };
 
 const pauseGif = async function (gifElement) {
-  if (gifElement.currentSrc.includes('.webp')) {
-    const imageData = await fetch(gifElement.currentSrc).then(response => response.arrayBuffer());
-    if (!isAnimatedWebP(imageData)) return;
-  }
+  if (gifElement.currentSrc.includes('.webp') &&
+    (await isAnimatedWebP(gifElement.currentSrc)) === false) return;
+
   const image = new Image();
   image.src = gifElement.currentSrc;
   image.onload = () => {
