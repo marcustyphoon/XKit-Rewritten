@@ -26,12 +26,14 @@ const styleElement = buildStyle(`
   line-height: 1em;
 }
 
-.${labelClass}::before {
-  content: "GIF";
-}
-
 .${labelClass}.mini {
   font-size: 0.6rem;
+}
+.${labelClass}.four {
+  font-size: 0.75rem;
+}
+.${labelClass}.mini.four {
+  font-size: 0.45rem;
 }
 
 .${canvasClass} {
@@ -58,12 +60,11 @@ const styleElement = buildStyle(`
 }
 `);
 
-const addLabel = (element, inside = false) => {
+const addLabel = (element, labelText, inside = false) => {
   if (element.parentNode.querySelector(`.${labelClass}`) === null) {
-    const gifLabel = document.createElement('p');
-    gifLabel.className = element.clientWidth && element.clientWidth < 150
-      ? `${labelClass} mini`
-      : labelClass;
+    const gifLabel = dom('p', { class: labelClass }, null, [labelText]);
+    element.clientWidth && element.clientWidth < 150 && gifLabel.classList.add('mini');
+    labelText.length > 3 && gifLabel.classList.add('four');
 
     inside ? element.append(gifLabel) : element.parentNode.append(gifLabel);
   }
@@ -84,7 +85,7 @@ const pauseGif = async function (gifElement) {
       canvas.classList.add(canvasClass);
       canvas.getContext('2d').drawImage(image, 0, 0);
       gifElement.parentNode.append(canvas);
-      addLabel(gifElement);
+      addLabel(gifElement, gifElement.currentSrc.includes('.webp') ? 'WEBP' : 'GIF');
     }
   };
 };
@@ -112,7 +113,7 @@ const processGifs = function (gifElements) {
 const processBackgroundGifs = function (gifBackgroundElements) {
   gifBackgroundElements.forEach(gifBackgroundElement => {
     gifBackgroundElement.classList.add(backgroundGifClass);
-    addLabel(gifBackgroundElement, true);
+    addLabel(gifBackgroundElement, 'GIF', true);
   });
 };
 
