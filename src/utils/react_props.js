@@ -1,3 +1,4 @@
+import { keyToCss } from './css_map.js';
 import { inject } from './inject.js';
 import { primaryBlogName, userBlogNames, adminBlogNames } from './user.js';
 
@@ -67,3 +68,15 @@ export const isMyPost = async (postElement) => {
  */
 export const editPostFormTags = async ({ add = [], remove = [] }) =>
   inject('/main_world/control_tags_input.js', [{ add, remove }]);
+
+/**
+ * Manipulate post form submit button status
+ * @param {'now'|'queue'|'draft'|'private'|'schedule'} status - Mode to set the post form submit button to
+ * @param {Date?} publishOn - Date value to set the post schedule to, if status is "schedule"
+ */
+export const editPostFormStatus = async (status, publishOn) => {
+  const button = document.querySelector(`${keyToCss('postFormButton')} button`);
+  if (!button) throw new Error('Missing button element to edit post form status');
+
+  await inject('/main_world/control_post_form_status.js', [status, publishOn?.getTime()], button);
+};
