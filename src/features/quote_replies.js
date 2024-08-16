@@ -9,6 +9,7 @@ import { getPreferences } from '../utils/preferences.js';
 import { buildSvg } from '../utils/remixicon.js';
 import { apiFetch, navigate } from '../utils/tumblr_helpers.js';
 import { userBlogs } from '../utils/user.js';
+import { editPostFormStatus } from '../utils/react_props.js';
 
 const storageKey = 'quote_replies.draftLocation';
 const buttonClass = 'xkit-quote-replies';
@@ -53,6 +54,17 @@ const processNotifications = notifications => notifications.forEach(async notifi
     [buildSvg('ri-chat-quote-line')]
   ));
 });
+
+const sleep = ms => new Promise(resolve => setTimeout(() => resolve(), ms));
+
+const delayedSetPostFormStatus = (...args) => {
+  const setPostNow = () => {
+    pageModifications.unregister(setPostNow);
+    editPostFormStatus(...args);
+  };
+  pageModifications.register(`${keyToCss('postFormButton')} button`, setPostNow);
+  sleep(5000).then(() => pageModifications.unregister(setPostNow));
+};
 
 const quoteReply = async (tumblelogName, notificationProps) => {
   const uuid = userBlogs.find(({ name }) => name === tumblelogName).uuid;
@@ -101,6 +113,7 @@ const quoteReply = async (tumblelogName, notificationProps) => {
     }
   } else {
     navigate(currentDraftLocation);
+    delayedSetPostFormStatus('now');
   }
 };
 
@@ -115,6 +128,7 @@ export const main = async function () {
 
   if (newTab && draftLocation !== undefined && /^\/blog\/.+\/drafts/.test(location.pathname)) {
     navigate(draftLocation);
+    delayedSetPostFormStatus('now');
   }
 };
 
