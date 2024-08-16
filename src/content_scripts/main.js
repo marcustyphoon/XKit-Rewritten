@@ -109,6 +109,9 @@
     installedScripts
       .filter(scriptName => enabledScripts.includes(scriptName))
       .forEach(runScript);
+
+    import(browser.runtime.getURL('/utils/check_repeat_init.js'))
+      .then(({ checkRepeatInit }) => checkRepeatInit());
   };
 
   const waitForReactLoaded = () => new Promise(resolve => {
