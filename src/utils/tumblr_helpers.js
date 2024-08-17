@@ -26,6 +26,8 @@ export const createEditRequestBody = postData => {
     sourceUrlRaw,
     slug,
     interactabilityReblog,
+    community,
+    isCommercial,
 
     canBeTipped,
     communityLabels: {
@@ -44,6 +46,8 @@ export const createEditRequestBody = postData => {
     sourceUrl: sourceUrlRaw ?? sourceUrl,
     slug,
     interactabilityReblog,
+    community: community?.name,
+    isCommercial,
 
     canBeTipped,
     hasCommunityLabel,
