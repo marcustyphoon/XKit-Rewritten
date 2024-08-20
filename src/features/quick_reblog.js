@@ -11,7 +11,11 @@ import { dom } from '../utils/dom.js';
 import { showErrorModal } from '../utils/modals.js';
 import { keyToCss } from '../utils/css_map.js';
 
-const blogSelector = dom('select');
+const blogSelector = dom('select', null, null, [
+  ...userBlogs.map(({ name, uuid }) => dom('option', { value: uuid }, null, [name])),
+  ...(joinedCommunities.length ? [dom('hr')] : []),
+  ...joinedCommunities.map(({ title, uuid, blog: { name } }) => dom('option', { value: uuid }, null, [`${title} (${name})`]))
+]);
 const blogAvatar = dom('div', { class: 'avatar' });
 const blogSelectorContainer = dom('div', { class: 'select-container' }, null, [
   blogAvatar,
@@ -65,7 +69,13 @@ const alreadyRebloggedStorageKey = 'quick_reblog.alreadyRebloggedList';
 const rememberedBlogStorageKey = 'quick_reblog.rememberedBlogs';
 const quickTagsStorageKey = 'quick_tags.preferences.tagBundles';
 const blogHashes = new Map();
-const avatarUrls = new Map();
+const avatarUrls = new Map(
+  [...userBlogs, ...joinedCommunities].map(data => {
+    const avatar = data.avatarImage ?? data.avatar;
+    const { url } = avatar.at(-1);
+    return [data.uuid, url];
+  })
+);
 
 const reblogButtonSelector = `
 ${postSelector} footer a[href*="/reblog/"],
@@ -319,18 +329,6 @@ export const main = async function () {
     alreadyRebloggedEnabled,
     alreadyRebloggedLimit
   } = await getPreferences('quick_reblog'));
-
-  blogSelector.replaceChildren(
-    ...userBlogs.map(({ name, uuid }) => dom('option', { value: uuid }, null, [name])),
-    ...joinedCommunities.length ? [dom('hr')] : [],
-    ...joinedCommunities.map(({ title, uuid, blog: { name } }) => dom('option', { value: uuid }, null, [`${title} (${name})`]))
-  );
-
-  [...userBlogs, ...joinedCommunities].forEach((data) => {
-    const avatar = data.avatarImage ?? data.avatar;
-    const { url } = avatar.at(-1);
-    avatarUrls.set(data.uuid, url);
-  });
 
   if (rememberLastBlog) {
     for (const { uuid } of [...userBlogs, ...joinedCommunities]) {
