@@ -1,21 +1,26 @@
 import { pageModifications } from '../../utils/mutations.js';
 import { keyToCss } from '../../utils/css_map.js';
 import { buildStyle } from '../../utils/interface.js';
-import { dom } from '../../utils/dom.js';
 
 const labelSelector = `${keyToCss('followingBadgeContainer', 'mutualsBadgeContainer')}:has(> svg)`;
 
-const spanClass = 'xkit-tweaks-subtle-activity-span';
+const attr = 'data-subtle-activity-contents';
 
 export const styleElement = buildStyle(`
-.${spanClass} {
+[${attr}] {
+  font-size: 0;
+}
+
+[${attr}]::before {
   display: inline-block;
   overflow-x: clip;
 
+  font-size: .78125rem;
+  content: attr(${attr});
   width: var(--rendered-width);
 }
 
-a:not(:hover) .${spanClass} {
+a:not(:hover) [${attr}]::before {
   width: 0;
 }
 
@@ -25,7 +30,7 @@ a:not(:hover) ${labelSelector} > svg {
 `);
 
 const transitionStyleElement = buildStyle(`
-.${spanClass} {
+[${attr}]::before {
   transition: width 0.2s ease;
 }
 ${labelSelector} > svg {
@@ -34,15 +39,8 @@ ${labelSelector} > svg {
 `);
 
 const processLabels = labels => labels.forEach(label => {
-  const textNode = label.firstChild;
-  if (textNode.nodeName !== '#text') return;
-
-  const span = dom('span', null, null, [textNode.textContent]);
-  label.insertBefore(span, textNode);
-  textNode.textContent = '';
-
-  span.style.setProperty('--rendered-width', `${span.getBoundingClientRect().width}px`);
-  span.classList.add(spanClass);
+  label.style.setProperty('--rendered-width', `${label.getBoundingClientRect().width}px`);
+  label.setAttribute(attr, label.textContent);
 });
 
 const waitForRender = () =>
@@ -58,8 +56,5 @@ export const clean = async function () {
   pageModifications.unregister(processLabels);
   transitionStyleElement.remove();
 
-  [...document.querySelectorAll(`.${spanClass}`)].forEach(span => {
-    const textNode = document.createTextNode(span.textContent);
-    span.parentNode.replaceChild(textNode, span);
-  });
+  // todo
 };
