@@ -6,10 +6,12 @@ import { apiFetch } from '../utils/tumblr_helpers.js';
 import { userBlogs } from '../utils/user.js';
 
 const getPostsFormId = 'xkit-sideblog-queue-form';
-const sourceBlogStorageKey = 'quick_reblog.rememberedSourceBlogs';
-const targetBlogStorageKey = 'quick_reblog.rememberedTargetBlogs';
-const afterStorageKey = 'quick_reblog.rememberedAfterValue';
-const tagsStorageKey = 'quick_reblog.rememberedTagsValue';
+const sourceBlogStorageKey = 'sideblog_queue.rememberedSourceBlogs';
+const targetBlogStorageKey = 'sideblog_queue.rememberedTargetBlogs';
+const afterStorageKey = 'sideblog_queue.rememberedAfterValue';
+const tagsStorageKey = 'sideblog_queue.rememberedTagsValue';
+const excludeStorageKey = 'sideblog_queue.rememberedExclude';
+const searchmodeStorageKey = 'sideblog_queue.rememberedSearchmode';
 
 const createBlogOption = ({ name, title, uuid }) => dom('option', { value: uuid, title }, null, [name]);
 const createTagSpan = tag => dom('span', { class: 'sideblog-queue-tag' }, null, [tag]);
@@ -43,17 +45,21 @@ const elementsAsList = (array, andOr) =>
 
 const timezoneOffsetMs = new Date().getTimezoneOffset() * 60000;
 
-const persistSelections = async ({ sourceBlogElement, targetBlogElement, afterElement, tagsElement }) => {
+const persistSelections = async ({ sourceBlogElement, targetBlogElement, afterElement, tagsElement, excludeElement, searchmodeList }) => {
   const {
     [sourceBlogStorageKey]: rememberedSourceBlogs = {},
     [targetBlogStorageKey]: rememberedTargetBlogs = {},
     [afterStorageKey]: afterValue = defaultAfter,
-    [tagsStorageKey]: tagsValue = ''
+    [tagsStorageKey]: tagsValue = '',
+    [excludeStorageKey]: excludeValue = true,
+    [searchmodeStorageKey]: searchmodeValue = 'tagged'
   } = await browser.storage.local.get([
     sourceBlogStorageKey,
     targetBlogStorageKey,
     afterStorageKey,
-    tagsStorageKey
+    tagsStorageKey,
+    excludeStorageKey,
+    searchmodeStorageKey
   ]);
 
   const blogHashes = new Map();
@@ -94,10 +100,23 @@ const persistSelections = async ({ sourceBlogElement, targetBlogElement, afterEl
   afterElement.addEventListener('input', updateRememberedValue(afterStorageKey));
   tagsElement.value = tagsValue;
   tagsElement.addEventListener('input', updateRememberedValue(tagsStorageKey));
+
+  searchmodeList.value = searchmodeValue;
+  [...searchmodeList].forEach(radioButton =>
+    radioButton.addEventListener('change', updateRememberedValue(searchmodeStorageKey))
+  );
+
+  const updateRememberedChecked = storageKey => ({ currentTarget: { checked } }) => {
+    browser.storage.local.set({ [storageKey]: checked });
+  };
+
+  excludeElement.checked = excludeValue;
+  excludeElement.addEventListener('input', updateRememberedChecked(excludeStorageKey));
 };
 
 const showInitialPrompt = async () => {
   const initialForm = dom('form', { id: getPostsFormId }, { submit: event => confirmInitialPrompt(event).catch(showErrorModal) }, [
+    dom('div', null, null, 'Choose posts to reblog:'),
     dom('label', null, null, [
       'Posts on this blog:',
       dom('select', { name: 'sourceblog', required: true }, null, userBlogs.map(createBlogOption))
@@ -111,9 +130,23 @@ const showInitialPrompt = async () => {
       dom('input', { type: 'datetime-local', name: 'after', value: defaultAfter, required: true })
     ]),
     dom('div'),
+    dom('div', null, null, 'Choose where to queue reblogs:'),
     dom('label', null, null, [
       'Target blog:',
       dom('select', { name: 'targetblog', required: true }, null, userBlogs.map(createBlogOption))
+    ]),
+    dom('div'),
+    dom('label', null, null, [
+      "Skip posts if they've been reblogged/queued on the target:",
+      dom('input', { type: 'checkbox', checked: true, name: 'exclude' })
+    ]),
+    dom('label', null, null, [
+      'Search posts with the chosen tag(s) on the target:',
+      dom('input', { type: 'radio', value: 'tagged', name: 'searchmode', checked: true })
+    ]),
+    dom('label', null, null, [
+      'Search every post on the target (may be slow!):',
+      dom('input', { type: 'radio', value: 'all', name: 'searchmode' })
     ])
   ]);
 
@@ -121,16 +154,25 @@ const showInitialPrompt = async () => {
     sourceBlogElement: initialForm.elements.sourceblog,
     targetBlogElement: initialForm.elements.targetblog,
     afterElement: initialForm.elements.after,
-    tagsElement: initialForm.elements.tags
+    tagsElement: initialForm.elements.tags,
+    excludeElement: initialForm.elements.exclude,
+    searchmodeList: initialForm.elements.searchmode
   });
 
+  const updateSearchModeDisable = checked =>
+    [...initialForm.elements.searchmode].forEach(radioButton => {
+      radioButton.disabled = !checked;
+      checked
+        ? radioButton.parentElement.style.removeProperty('opacity')
+        : radioButton.parentElement.style.setProperty('opacity', 0.5);
+    });
+  initialForm.elements.exclude.addEventListener('input', ({ currentTarget: { checked } }) =>
+    updateSearchModeDisable(checked)
+  );
+  updateSearchModeDisable(initialForm.elements.exclude.checked);
+
   showModal({
-    title: 'Select posts to queue',
-    message: [
-      initialForm,
-      dom('small', null, null, [
-        'Posts will not be queued if they already exist on the target blog or in its queue with the matching tag.\n'
-      ])],
+    message: [initialForm],
     buttons: [
       modalCancelButton,
       dom('input', { class: 'blue', type: 'submit', form: getPostsFormId, value: 'Next' })
@@ -153,6 +195,8 @@ const confirmInitialPrompt = async event => {
   const sourceName = elements.sourceblog.selectedOptions[0].textContent;
   const targetUuid = elements.targetblog.value;
   const targetName = elements.targetblog.selectedOptions[0].textContent;
+  const exclude = elements.exclude.checked;
+  const searchmode = elements.searchmode.value;
 
   const tags = elements.tags.value
     .replace(/"|#/g, '')
@@ -204,7 +248,7 @@ const confirmInitialPrompt = async event => {
       dom(
         'button',
         { class: 'red' },
-        { click: () => queuePosts({ sourceUuid, sourceName, targetUuid, targetName, tags, after }).catch(showErrorModal) },
+        { click: () => queuePosts({ sourceUuid, sourceName, targetUuid, targetName, tags, after, exclude, searchmode }).catch(showErrorModal) },
         ['Queue them!']
       )
     ]
@@ -255,8 +299,8 @@ const showPostsAlreadyQueued = ({ sourceName, targetName }) =>
     buttons: [modalCompleteButton]
   });
 
-const queuePosts = async ({ sourceUuid, sourceName, targetUuid, targetName, tags, after }) => {
-  const targetGatherStatus = dom('span', null, null, ['Gathering posts...']);
+const queuePosts = async ({ sourceUuid, sourceName, targetUuid, targetName, tags, after, exclude, searchmode }) => {
+  const targetGatherStatus = dom('span');
   const sourceGatherStatus = dom('span');
   const queueStatus = dom('span');
 
@@ -286,19 +330,27 @@ const queuePosts = async ({ sourceUuid, sourceName, targetUuid, targetName, tags
 
           fetchedTargetPosts += response.posts.length;
 
-          resource = response.links?.next?.href;
+          const seemsDone = response.posts.every(({ timestamp }) => timestamp < after);
+          resource = seemsDone ? false : response.links?.next?.href;
 
-          targetGatherStatus.textContent = `Found ${targetPostIdsSet.size} posts already on target (checked ${fetchedTargetPosts})${resource ? '...' : '.'}\n`;
+          targetGatherStatus.textContent = `Found ${targetPostIdsSet.size} posts to search on target (checked ${fetchedTargetPosts})${resource ? '...' : '.'}\n`;
         }),
         sleep(1000)
       ]);
     }
   };
-  for (const tag of tags) {
-    await collectTarget(`/v2/blog/${targetUuid}/posts?${$.param({ tag, limit: 50, reblog_info: true })}`);
-  }
-  for (const tag of tags) {
-    await collectTarget(`/v2/blog/${targetUuid}/posts/queue?${$.param({ tag, limit: 50, reblog_info: true })}`);
+  if (exclude) {
+    if (searchmode === 'tagged') {
+      for (const tag of tags) {
+        await collectTarget(`/v2/blog/${targetUuid}/posts?${$.param({ tag, limit: 50, reblog_info: true })}`);
+      }
+      for (const tag of tags) {
+        await collectTarget(`/v2/blog/${targetUuid}/posts/queue?${$.param({ tag, limit: 50, reblog_info: true })}`);
+      }
+    } else {
+      await collectTarget(`/v2/blog/${targetUuid}/posts?${$.param({ limit: 50, reblog_info: true })}`);
+      await collectTarget(`/v2/blog/${targetUuid}/posts/queue?${$.param({ limit: 50, reblog_info: true })}`);
+    }
   }
 
   let fetchedSourcePosts = 0;
@@ -315,7 +367,8 @@ const queuePosts = async ({ sourceUuid, sourceName, targetUuid, targetName, tags
 
           fetchedSourcePosts += response.posts.length;
 
-          resource = response.links?.next?.href;
+          const seemsDone = response.posts.every(({ timestamp }) => timestamp < after);
+          resource = seemsDone ? false : response.links?.next?.href;
 
           sourceGatherStatus.textContent = `Found ${toQueuePostsMap.size} posts on source (checked ${fetchedSourcePosts})${resource ? '...' : '.'}\n`;
         }),
@@ -324,7 +377,7 @@ const queuePosts = async ({ sourceUuid, sourceName, targetUuid, targetName, tags
     }
   };
   for (const tag of tags) {
-    await collectSource(`/v2/blog/${sourceUuid}/posts?${$.param({ tag, after, limit: 50, reblog_info: true })}`);
+    await collectSource(`/v2/blog/${sourceUuid}/posts?${$.param({ tag, limit: 50, reblog_info: true })}`);
   }
 
   if (toQueuePostsMap.size === 0) {
@@ -391,7 +444,7 @@ const sidebarOptions = {
   id: 'sideblog-queue',
   title: 'Sideblog Queue',
   rows: [{
-    label: 'Queue posts to sideblog',
+    label: 'Reblog posts on another blog',
     onclick: showInitialPrompt,
     carrot: true
   }]
