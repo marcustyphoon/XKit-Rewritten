@@ -1,0 +1,23 @@
+.sideblog-queue-tag,
+.sideblog-queue-blog {
+  display: inline-block;
+
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.sideblog-queue-tag {
+  padding: 0 0.5em;
+  border-radius: 1em;
+  margin: 0.25rem 0;
+
+  background-color: rgb(var(--deprecated-accent));
+  color: rgb(var(--navy));
+}
+
+.sideblog-queue-blog {
+  font-weight: 700;
+}
+
+.sideblog-queue-tag::before { content: '#'; }
+.sideblog-queue-blog::before { content: '@'; }
