@@ -1,0 +1,22 @@
+{
+  "type": "module",
+  "scripts": {
+    "build": "tsx build.ts",
+    "watch": "tsx watch --include \"../src/**/*\" --include \"overrides/**/*\" --clear-screen=false build.ts",
+    "webExt": "tsx build.ts && web-ext build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "dotenv": "^16.4.5",
+    "fflate": "^0.8.2",
+    "glob": "^11.0.0",
+    "tsx": "^4.19.2",
+    "web-ext": "^8.3.0"
+  },
+  "webExt": {
+    "sourceDir": "src/",
+    "build": {
+      "overwriteDest": true
+    }
+  }
+}
