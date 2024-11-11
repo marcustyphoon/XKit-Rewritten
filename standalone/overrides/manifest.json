@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "XKit Rewritten",
+  "version": "[add-on version]",
+
+  "author": "marcustyphoon",
+
+  "action": {
+    "default_title": "XKit Rewritten",
+    "default_popup": "action/popup.html"
+  },
+  "options_ui": {
+    "page": "action/popup.html?embedded=true",
+    "open_in_tab": false
+  },
+
+  "permissions": [ "storage" ],
+  "web_accessible_resources": [{
+    "resources": [ "*.js", "*.json", "*.css", "*.svg" ],
+    "matches": [ "*://www.tumblr.com/*" ]
+  }],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.tumblr.com/*"
+      ],
+      "exclude_matches": [
+        "*://www.tumblr.com/login",
+        "*://www.tumblr.com/register",
+        "*://www.tumblr.com/register?*",
+        "*://www.tumblr.com/privacy/*"
+      ],
+      "run_at": "document_end",
+      "js": [
+        "lib/browser-polyfill.min.js",
+        "lib/jquery.min.js",
+        "content_scripts/main.js"
+      ],
+      "css": [
+        "content_scripts/control_buttons.css",
+        "content_scripts/meatballs.css",
+        "content_scripts/sidebar.css",
+        "content_scripts/modals.css",
+        "content_scripts/notifications.css",
+        "content_scripts/post_actions.css"
+      ]
+    }
+  ],
+
+  "minimum_chrome_version": "105",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "[add-on id]",
+      "update_url": "[update url]",
+      "strict_min_version": "128.0"
+    },
+    "gecko_android": {
+      "strict_min_version": "128.0"
+    }
+  }
+}
