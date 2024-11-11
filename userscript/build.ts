@@ -1,7 +1,8 @@
+import { Glob } from 'bun';
 import * as esbuild from 'esbuild';
-import { globSync } from 'glob';
 import fs from 'node:fs';
-import path from 'node:path';
+
+const globSync = (str, options) => [...new Glob(str).scanSync(options)];
 
 const getRandomHexString = () => {
   const typedArray = new Uint8Array(8);
@@ -22,25 +23,25 @@ const transform = str =>
 
 const existingFiles = new Set(globSync('src/**/*.*', { dot: true }));
 
-const sourceFiles = globSync('../src/{main_world,utils,content_scripts}/**/*.*', { dot: true });
-sourceFiles.forEach(filePath => {
-  const contents = transform(fs.readFileSync(filePath, 'utf8'));
+const sourceFiles = globSync('../src/{main_world,utils,content_scripts}/**/*.*', {
+  dot: true
+});
+for (const filePath of sourceFiles) {
+  const contents = await Bun.file(filePath).text().then(transform);
 
   const target = filePath.replace('../', '');
   existingFiles.delete(target);
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, contents, { flag: 'w+' });
-});
+  await Bun.write(target, contents);
+}
 
 const overrides = globSync('overrides/**/*.*', { dot: true });
-overrides.forEach(filePath => {
-  const contents = transform(fs.readFileSync(filePath, 'utf8'));
+for (const filePath of overrides) {
+  const contents = await Bun.file(filePath).text().then(transform);
 
   const target = filePath.replace(/^overrides/, 'src');
   existingFiles.delete(target);
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, contents, { flag: 'w+' });
-});
+  await Bun.write(target, contents);
+}
 
 existingFiles.forEach(filePath => {
   if (filePath !== 'src/.gitignore') {
@@ -49,9 +50,9 @@ existingFiles.forEach(filePath => {
 });
 
 const staticCssFiles = globSync('./src/**/*.css', { dot: true });
-const staticCss = staticCssFiles
-  .map(filePath => transform(fs.readFileSync(filePath, 'utf8')))
-  .join('\n\n');
+const staticCss = await Promise.all(
+  staticCssFiles.map(filePath => Bun.file(filePath).text().then(transform))
+).then(res => res.join('\n\n'));
 
 let name = 'New Tumblr Userscript';
 
