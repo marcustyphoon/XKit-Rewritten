@@ -3,7 +3,8 @@
   "scripts": {
     "build": "tsx build.ts",
     "watch": "tsx watch --include \"../src/**/*\" --include \"overrides/**/*\" --clear-screen=false build.ts",
-    "webExt": "tsx build.ts && web-ext build"
+    "webExt": "tsx build.ts && web-ext build",
+    "deploy": "tsx deploy.ts"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
