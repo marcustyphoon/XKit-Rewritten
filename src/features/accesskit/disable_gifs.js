@@ -36,7 +36,8 @@ export const styleElement = buildStyle(`
   font-size: 0.6rem;
 }
 
-.${labelClass}${hovered} {
+.${labelClass}${hovered},
+a:hover + div .${labelClass} {
   display: none;
 }
 
@@ -46,7 +47,7 @@ img[style*="${contentModifiedVar}"]:not(${hovered}) {
 
 .${backgroundGifClass}:not(:hover) {
   background-image: none !important;
-  background-color: rgb(var(--secondary-accent));
+  background-color: rgb(var(--secondary-accent)) !important;
 }
 
 .${backgroundGifClass}:not(:hover) > div {
@@ -88,7 +89,7 @@ const pausedBackgroundImageValues = {};
 const backgroundStyleElement = buildStyle();
 const updateBackgroundStyle = () => {
   backgroundStyleElement.textContent = Object.entries(pausedBackgroundImageValues)
-    .map(([id, value]) => `[data-disable-gifs-id="${id}"]:not(:hover) { background-image: ${value} !important; }`)
+    .map(([id, value]) => `[data-disable-gifs-id="${id}"]:not(:hover):not(a:hover + div > *) { background-image: ${value} !important; }`)
     .join('\n');
 };
 
@@ -148,7 +149,7 @@ export const main = async function () {
   pageModifications.register(gifImage, processGifs);
 
   const gifBackgroundImage = `
-    ${keyToCss('communityHeaderImage', 'bannerImage', 'videoHubCardWrapper')}[style*=".gif"]
+    ${keyToCss('communityHeaderImage', 'communityCategoryImage', 'bannerImage', 'videoHubCardWrapper')}[style*=".gif"]
   `;
   pageModifications.register(gifBackgroundImage, processBackgroundGifs);
   document.documentElement.append(backgroundStyleElement);
