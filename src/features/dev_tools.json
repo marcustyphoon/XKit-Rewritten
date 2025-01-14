@@ -11,6 +11,11 @@
       "type": "checkbox",
       "label": "Translate CSS Map",
       "default": false
+    },
+    "link_editor": {
+      "type": "checkbox",
+      "label": "Edit post links",
+      "default": false
     }
   },
   "deprecated": true
