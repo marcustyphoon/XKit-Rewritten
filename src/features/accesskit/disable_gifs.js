@@ -4,10 +4,12 @@ import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
 import { sha256 } from '../../utils/crypto.js';
 
-const canvasClass = 'xkit-paused-gif-placeholder';
+const contentModifiedVar = '--xkit-paused-gif-content';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
 const backgroundGifClass = 'xkit-paused-background-gif';
+
+const hovered = `:is(:hover > *, .${containerClass}:hover *)`;
 
 export const styleElement = buildStyle(`
 .${labelClass} {
@@ -34,18 +36,12 @@ export const styleElement = buildStyle(`
   font-size: 0.6rem;
 }
 
-.${canvasClass} {
-  position: absolute;
-  visibility: visible;
-
-  background-color: rgb(var(--white));
+.${labelClass}${hovered} {
+  display: none;
 }
 
-*:hover > .${canvasClass},
-*:hover > .${labelClass},
-.${containerClass}:hover .${canvasClass},
-.${containerClass}:hover .${labelClass} {
-  display: none;
+img[style*="${contentModifiedVar}"]:not(${hovered}) {
+  content: var(${contentModifiedVar});
 }
 
 .${backgroundGifClass}:not(:hover) {
@@ -71,30 +67,28 @@ const addLabel = (element, inside = false) => {
 
 const pauseGif = function (gifElement) {
   const image = new Image();
+  image.crossOrigin = 'anonymous';
   image.src = gifElement.currentSrc;
   image.onload = () => {
-    if (gifElement.parentNode && gifElement.parentNode.querySelector(`.${canvasClass}`) === null) {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      canvas.className = gifElement.className;
-      canvas.classList.add(canvasClass);
-      canvas.getContext('2d').drawImage(image, 0, 0);
-      gifElement.parentNode.append(canvas);
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    canvas.getContext('2d').drawImage(image, 0, 0);
+    canvas.toBlob(blob => {
+      const blobUrl = URL.createObjectURL(blob);
+      gifElement.style.setProperty(contentModifiedVar, `url(${blobUrl})`);
       addLabel(gifElement);
-    }
+    });
   };
 };
 
 const processGifs = function (gifElements) {
   gifElements.forEach(gifElement => {
+    if (gifElement.matches(`[style*="${contentModifiedVar}"]`)) return;
     if (gifElement.closest('.block-editor-writing-flow')) return;
-    const pausedGifElements = [
-      ...gifElement.parentNode.querySelectorAll(`.${canvasClass}`),
-      ...gifElement.parentNode.querySelectorAll(`.${labelClass}`)
-    ];
-    if (pausedGifElements.length) {
-      gifElement.after(...pausedGifElements);
+    const existingLabelElements = gifElement.parentNode.querySelectorAll(`.${labelClass}`);
+    if (existingLabelElements.length) {
+      gifElement.after(...existingLabelElements);
       return;
     }
 
@@ -193,9 +187,11 @@ export const clean = async function () {
     wrapper.replaceWith(...wrapper.children)
   );
 
-  $(`.${canvasClass}, .${labelClass}`).remove();
+  $(`.${labelClass}`).remove();
   $(`.${backgroundGifClass}`).removeClass(backgroundGifClass);
   $('[data-disable-gifs-id]').removeAttr('data-disable-gifs-id');
+  [...document.querySelectorAll(`img[style*="${contentModifiedVar}"]`)]
+    .forEach(element => element.style.removeProperty(contentModifiedVar));
 
   backgroundStyleElement.remove();
 };
