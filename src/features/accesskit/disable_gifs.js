@@ -63,6 +63,26 @@ const addLabel = (element, inside = false) => {
   }
 };
 
+const isAnimatedDefault = true;
+const isAnimated = async (sourceUrl) => {
+  /* globals ImageDecoder */
+  if (typeof ImageDecoder !== 'function') return isAnimatedDefault;
+
+  const response = await fetch(sourceUrl);
+
+  const contentType = response.headers.get('Content-Type');
+  const supported = await ImageDecoder.isTypeSupported(contentType);
+  if (!supported) return isAnimatedDefault;
+
+  const decoder = new ImageDecoder({
+    type: contentType,
+    data: response.body,
+    preferAnimation: true
+  });
+  await decoder.decode();
+  return decoder.tracks.selectedTrack.animated;
+};
+
 const processGifs = function (gifElements) {
   gifElements.forEach(async gifElement => {
     if (gifElement.closest('.block-editor-writing-flow')) return;
@@ -73,6 +93,10 @@ const processGifs = function (gifElements) {
     }
 
     await gifElement.decode();
+    if (gifElement.currentSrc.includes('.webp') && (await isAnimated(gifElement.currentSrc)) === false) {
+      console.log("this webp image isn't animated!", gifElement);
+      return;
+    }
     gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
     addLabel(gifElement);
   });
@@ -139,7 +163,7 @@ const processRecommendedBlogCards = cards =>
 
 export const main = async function () {
   const gifImage = `
-    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
+    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
 
