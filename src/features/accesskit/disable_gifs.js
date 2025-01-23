@@ -82,7 +82,46 @@ const sourceUrlRegex = /(?<=url\(["'])[^)]*?\.gifv?(?=["']\))/g;
 
 const pausedUrlCache = {};
 const createPausedUrl = (sourceUrl) => {
-  pausedUrlCache[sourceUrl] ??= new Promise(resolve => {
+  pausedUrlCache[sourceUrl] ??= newCreatePausedUrl(sourceUrl);
+  return pausedUrlCache[sourceUrl];
+};
+
+const newCreatePausedUrl = async (sourceUrl) => {
+  if (typeof ImageDecoder !== 'function') return legacyCreatePausedUrl(sourceUrl);
+
+  /* globals ImageDecoder */
+  const response = await fetch(sourceUrl);
+  const contentType = response.headers.get('Content-Type');
+  const supported = await ImageDecoder.isTypeSupported(contentType);
+  console.log(contentType, supported);
+  if (!supported) return legacyCreatePausedUrl(sourceUrl);
+
+  const decoder = new ImageDecoder({
+    type: contentType,
+    data: response.body,
+    preferAnimation: true
+  });
+
+  const { image: videoFrame } = await decoder.decode();
+
+  const animated = decoder.tracks.selectedTrack.animated;
+  if (animated) {
+    console.log(sourceUrl, 'is animated!');
+    const canvas = document.createElement('canvas');
+    canvas.width = videoFrame.displayWidth;
+    canvas.height = videoFrame.displayHeight;
+    canvas.getContext('2d').drawImage(videoFrame, 0, 0);
+    return new Promise(resolve =>
+      canvas.toBlob(blob => resolve(URL.createObjectURL(blob)))
+    );
+  } else {
+    console.log(sourceUrl, 'is NOT animated!');
+    return new Promise(() => {});
+  }
+};
+
+const legacyCreatePausedUrl = (sourceUrl) =>
+  new Promise(resolve => {
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.src = sourceUrl;
@@ -96,8 +135,6 @@ const createPausedUrl = (sourceUrl) => {
       );
     };
   });
-  return pausedUrlCache[sourceUrl];
-};
 
 const processBackgroundGifs = function (gifBackgroundElements) {
   gifBackgroundElements.forEach(async gifBackgroundElement => {
@@ -139,7 +176,7 @@ const processRecommendedBlogCards = cards =>
 
 export const main = async function () {
   const gifImage = `
-    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
+    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
 
