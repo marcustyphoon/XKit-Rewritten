@@ -65,25 +65,8 @@ const addLabel = (element, inside = false) => {
   }
 };
 
-const pauseGif = function (gifElement) {
-  const image = new Image();
-  image.crossOrigin = 'anonymous';
-  image.src = gifElement.currentSrc;
-  image.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    canvas.getContext('2d').drawImage(image, 0, 0);
-    canvas.toBlob(blob => {
-      const blobUrl = URL.createObjectURL(blob);
-      gifElement.style.setProperty(contentModifiedVar, `url(${blobUrl})`);
-      addLabel(gifElement);
-    });
-  };
-};
-
 const processGifs = function (gifElements) {
-  gifElements.forEach(gifElement => {
+  gifElements.forEach(async gifElement => {
     if (gifElement.matches(`[style*="${contentModifiedVar}"]`)) return;
     if (gifElement.closest('.block-editor-writing-flow')) return;
     const existingLabelElements = gifElement.parentNode.querySelectorAll(`.${labelClass}`);
@@ -92,11 +75,9 @@ const processGifs = function (gifElements) {
       return;
     }
 
-    if (gifElement.complete && gifElement.currentSrc) {
-      pauseGif(gifElement);
-    } else {
-      gifElement.onload = () => pauseGif(gifElement);
-    }
+    await gifElement.decode();
+    gifElement.style.setProperty(contentModifiedVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
+    addLabel(gifElement);
   });
 };
 
