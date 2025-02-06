@@ -1,21 +1,16 @@
 {
   "license": "GPL-3.0",
   "repository": "github:AprilSylph/XKit-Rewritten",
+  "type": "module",
   "scripts": {
     "test": "web-ext lint",
-    "posttest": "eslint src/",
+    "posttest": "biome lint",
     "start": "web-ext run",
     "build": "web-ext build"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "chrome-webstore-upload-cli": "^3.3.1",
-    "eslint": "^8.57.1",
-    "eslint-config-semistandard": "^17.0.0",
-    "eslint-config-standard": "^17.1.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-jsdoc": "^50.5.0",
-    "eslint-plugin-n": "^15.7.0",
-    "eslint-plugin-promise": "^6.6.0",
     "web-ext": "^8.3.0"
   },
   "dependencies": {
