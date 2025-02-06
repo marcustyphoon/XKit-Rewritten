@@ -7,8 +7,7 @@ export default function unburyNotification () {
     const { notification } = fiber.memoizedProps || {};
     if (notification !== undefined) {
       return notification;
-    } else {
-      fiber = fiber.return;
     }
+    fiber = fiber.return;
   }
 }

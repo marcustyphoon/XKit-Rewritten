@@ -7,8 +7,7 @@ export default function unburyTimelineObject () {
     const { timelineObject } = fiber.memoizedProps || {};
     if (timelineObject !== undefined) {
       return timelineObject;
-    } else {
-      fiber = fiber.return;
     }
+    fiber = fiber.return;
   }
 }

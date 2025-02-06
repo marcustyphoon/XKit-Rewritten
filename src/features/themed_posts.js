@@ -23,7 +23,7 @@ const hexToRGB = (hex) => {
   const { red, green, blue } = hex.match(groupsFromHex).groups;
   return [red, green, blue]
     .map(color => color.padEnd(2, color))
-    .map(color => parseInt(color, 16))
+    .map(color => Number.parseInt(color, 16))
     .join(', ');
 };
 

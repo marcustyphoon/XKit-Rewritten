@@ -58,7 +58,7 @@ body {
 
   background-color: rgb(var(--white));
   color: rgb(var(--black));
-  font-family: "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 100%;
   user-select: none;
 }

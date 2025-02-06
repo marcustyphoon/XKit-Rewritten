@@ -208,7 +208,7 @@ div:first-child + span + #quick-reblog,
 
   background-color: rgb(var(--white));
   content: "\2713";
-  font-family: "Favorit", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
+  font-family: "Favorit", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
   font-weight: 700;
   text-align: center;

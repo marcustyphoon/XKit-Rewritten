@@ -14,8 +14,7 @@ export default function controlTagsInput ({ add, remove }) {
       tags = tags.filter(tag => remove.includes(tag) === false);
       fiber.stateNode.setState({ tags });
       break;
-    } else {
-      fiber = fiber.return;
     }
+    fiber = fiber.return;
   }
 }

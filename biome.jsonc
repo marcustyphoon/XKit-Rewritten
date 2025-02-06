@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false,
+		"ignoreUnknown": true,
 		"ignore": ["src/lib/**"]
 	},
 	"formatter": {
@@ -18,7 +18,21 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+      "complexity": {
+        "useArrowFunction": "off",
+        "noForEach": "off",
+        "noUselessThisAlias": "off"
+      },
+      "suspicious": {
+        "noRedundantUseStrict": "off"
+      },
+      "style": {
+        "noParameterAssign": "info"
+      },
+      "performance": {
+        "noDelete": "off"
+      }
 		}
 	}
 }

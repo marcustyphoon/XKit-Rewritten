@@ -47,9 +47,8 @@ const refreshCount = async function (tag) {
     for (const { timestamp } of posts) {
       if (timestamp <= savedTimestamp) {
         break;
-      } else {
-        unreadCount++;
       }
+      unreadCount++;
     }
 
     const showPlus = unreadCount === posts.length && links?.next;

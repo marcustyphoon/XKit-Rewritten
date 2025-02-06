@@ -26,9 +26,8 @@ export const megaEdit = async function (postIds, options) {
   formKey ??= await fetch('https://www.tumblr.com/neue_web/iframe/new/text').then(response => {
     if (response.ok) {
       return response.text();
-    } else {
-      throw Object.assign(new Error(response.status), { response });
     }
+    throw Object.assign(new Error(response.status), { response });
   }).then(responseText => {
     const responseDocument = (new DOMParser()).parseFromString(responseText, 'text/html');
     return responseDocument.getElementById('tumblr_form_key').getAttribute('content');

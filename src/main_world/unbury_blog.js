@@ -7,8 +7,7 @@ export default function unburyBlog () {
     const { blog, blogSettings } = fiber.memoizedProps || {};
     if (blog ?? blogSettings) {
       return blog ?? blogSettings;
-    } else {
-      fiber = fiber.return;
     }
+    fiber = fiber.return;
   }
 }

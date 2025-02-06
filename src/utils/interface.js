@@ -107,24 +107,24 @@ export const postType = ({ trail = [], content = [], layout = [] }) => {
   layout = trail[0]?.layout || layout;
 
   if (layout.some(({ type }) => type === 'ask')) return 'ask';
-  else if (content.some(({ type }) => type === 'video')) return 'video';
-  else if (content.some(({ type }) => type === 'image')) return 'photo';
-  else if (content.some(({ type }) => type === 'audio')) return 'audio';
-  else if (content.some(({ type, subtype }) => type === 'text' && subtype === 'quote')) return 'quote';
-  else if (content.some(({ type, subtype }) => type === 'text' && subtype === 'chat')) return 'chat';
-  else if (content.some(({ type }) => type === 'link')) return 'link';
-  else return 'text';
+  if (content.some(({ type }) => type === 'video')) return 'video';
+  if (content.some(({ type }) => type === 'image')) return 'photo';
+  if (content.some(({ type }) => type === 'audio')) return 'audio';
+  if (content.some(({ type, subtype }) => type === 'text' && subtype === 'quote')) return 'quote';
+  if (content.some(({ type, subtype }) => type === 'text' && subtype === 'chat')) return 'chat';
+  if (content.some(({ type }) => type === 'link')) return 'link';
+  return 'text';
 };
 
 const getClosestWithOverflow = element => {
   const parent = element.parentElement;
   if (!parent) {
     return element;
-  } else if (getComputedStyle(parent).overflowX !== 'visible') {
-    return parent;
-  } else {
-    return getClosestWithOverflow(parent);
   }
+  if (getComputedStyle(parent).overflowX !== 'visible') {
+    return parent;
+  }
+  return getClosestWithOverflow(parent);
 };
 
 export const appendWithoutOverflow = (element, target, defaultPosition = 'below') => {

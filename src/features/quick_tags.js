@@ -75,9 +75,8 @@ const populatePopups = async function () {
 const processPostForm = async function ([selectedTagsElement]) {
   if (selectedTagsElement.classList.contains(excludeClass)) {
     return;
-  } else {
-    selectedTagsElement.classList.add(excludeClass);
   }
+  selectedTagsElement.classList.add(excludeClass);
 
   if (originalPostTag && location.pathname.startsWith('/new')) {
     editPostFormTags({

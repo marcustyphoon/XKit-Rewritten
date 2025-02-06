@@ -7,8 +7,7 @@ export default function getNotificationProps () {
     const props = fiber.memoizedProps || {};
     if (props?.notification !== undefined) {
       return props;
-    } else {
-      fiber = fiber.return;
     }
+    fiber = fiber.return;
   }
 }

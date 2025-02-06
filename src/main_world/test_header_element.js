@@ -6,8 +6,7 @@ export default function testHeaderElement (selector) {
   while (fiber !== null) {
     if (fiber.elementType === 'header') {
       return fiber.stateNode.matches(selector);
-    } else {
-      fiber = fiber.return;
     }
+    fiber = fiber.return;
   }
 }
