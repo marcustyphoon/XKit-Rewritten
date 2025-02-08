@@ -2,6 +2,7 @@ import { pageModifications } from '../../utils/mutations.js';
 import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
+import { memoize } from '../../utils/memoize.js';
 
 const pausedContentVar = '--xkit-paused-gif-content';
 const labelClass = 'xkit-paused-gif-label';
@@ -63,7 +64,32 @@ const addLabel = (element, inside = false) => {
   }
 };
 
+const isAnimatedDefault = true;
+const isAnimated = memoize(async (sourceUrl) => {
+  // treat all GIFs like they're animated
+  if (sourceUrl.includes('.gif')) return true;
+
+  if (typeof ImageDecoder !== 'function') return isAnimatedDefault;
+  /* globals ImageDecoder */
+
+  const controller = new AbortController();
+  const response = await fetch(sourceUrl, { signal: controller.signal });
+
+  const contentType = response.headers.get('Content-Type');
+  const supported = await ImageDecoder.isTypeSupported(contentType);
+  if (!supported) return isAnimatedDefault;
+
+  const decoder = new ImageDecoder({
+    type: contentType,
+    data: response.body,
+    preferAnimation: true
+  });
+  await decoder.tracks.ready;
+  return decoder.tracks.selectedTrack.animated;
+});
+
 const pauseGif = async function (gifElement) {
+  if (!await isAnimated(gifElement.currentSrc)) return;
   gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
   addLabel(gifElement);
 };
@@ -153,7 +179,7 @@ const processRecommendedBlogCards = cards =>
 
 export const main = async function () {
   const gifImage = `
-    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow', 'linkCard')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
+    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow', 'linkCard')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
 
