@@ -7,6 +7,9 @@ const canvasClass = 'xkit-paused-gif-placeholder';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
 const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
+const loadingBlurClass = 'xkit-paused-gif-loading-blur';
+
+let enabledTimestamp;
 
 export const styleElement = buildStyle(`
 .${labelClass} {
@@ -49,6 +52,20 @@ export const styleElement = buildStyle(`
 
 [style*="${pausedBackgroundImageVar}"]:not(:hover) {
   background-image: var(${pausedBackgroundImageVar}) !important;
+}
+
+
+.${loadingBlurClass}:not(:hover)::before {
+  content: "";
+  backdrop-filter: blur(50px);
+  position: absolute;
+  inset: 0;
+}
+.${loadingBlurClass}:not(:hover) {
+  isolation: isolate;
+}
+.${loadingBlurClass}:not(:hover) > * {
+  z-index: 1;
 }
 `);
 
@@ -131,11 +148,13 @@ const processBackgroundGifs = function (gifBackgroundElements) {
     const sourceUrl = sourceValue.match(sourceUrlRegex)?.[0];
 
     if (sourceUrl) {
+      Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.classList.add(loadingBlurClass);
       gifBackgroundElement.style.setProperty(
         pausedBackgroundImageVar,
         sourceValue.replaceAll(sourceUrlRegex, await createPausedUrl(sourceUrl))
       );
       addLabel(gifBackgroundElement, true);
+      gifBackgroundElement.classList.remove(loadingBlurClass);
     }
   });
 };
@@ -157,6 +176,8 @@ const processRows = function (rowsElements) {
 };
 
 export const main = async function () {
+  enabledTimestamp = Date.now();
+
   const gifImage = `
     :is(figure, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
   `;
