@@ -62,7 +62,7 @@ export const styleElement = buildStyle(`
   inset: 0;
 }
 .${loadingBlurClass}:not(:hover) {
-  isolation: isolate;
+  contain: paint;
 }
 .${loadingBlurClass}:not(:hover) > * {
   z-index: 1;
