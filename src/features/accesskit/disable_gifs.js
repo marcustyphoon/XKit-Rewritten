@@ -10,6 +10,7 @@ const pausedContentVar = '--xkit-paused-gif-content';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
 const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
+const hasLoadingContentImageAttribute = 'data-paused-gif-content-loading';
 const loadingBackgroundImageAttribute = 'data-paused-gif-background-loading';
 
 let enabledTimestamp;
@@ -67,6 +68,12 @@ img[style*="${pausedContentVar}"]:not(${hovered}) {
   background-image: var(${pausedBackgroundImageVar}) !important;
 }
 
+[${hasLoadingContentImageAttribute}] > img:not(${hovered}) {
+  filter: blur(40px);
+}
+[${hasLoadingContentImageAttribute}] {
+  contain: paint;
+}
 [${loadingBackgroundImageAttribute}]:not(${hovered})::before {
   content: "";
   backdrop-filter: blur(40px);
@@ -142,9 +149,11 @@ const processGifs = function (gifElements) {
 };
 
 const pauseContentGif = async function (gifElement) {
+  Date.now() - enabledTimestamp >= 100 && gifElement.parentElement?.setAttribute(hasLoadingContentImageAttribute, '');
+  addLabel(gifElement);
   await loaded(gifElement);
   gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
-  addLabel(gifElement);
+  gifElement.parentElement?.removeAttribute(hasLoadingContentImageAttribute);
 };
 
 const processContentGifs = function (gifElements) {
@@ -264,5 +273,6 @@ export const clean = async function () {
     .forEach(element => element.style.removeProperty(pausedContentVar));
   [...document.querySelectorAll(`img[style*="${pausedBackgroundImageVar}"]`)]
     .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
+  $(`[${hasLoadingContentImageAttribute}]`).removeAttr(hasLoadingContentImageAttribute);
   $(`[${loadingBackgroundImageAttribute}]`).removeAttr(loadingBackgroundImageAttribute);
 };
