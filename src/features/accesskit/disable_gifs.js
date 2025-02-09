@@ -7,7 +7,7 @@ const canvasClass = 'xkit-paused-gif-placeholder';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
 const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
-const loadingBlurClass = 'xkit-paused-gif-loading-blur';
+const loadingBackgroundImageAttribute = 'data-paused-gif-background-loading';
 
 let enabledTimestamp;
 
@@ -54,14 +54,14 @@ export const styleElement = buildStyle(`
   background-image: var(${pausedBackgroundImageVar}) !important;
 }
 
-.${loadingBlurClass}:not(:hover)::before {
+[${loadingBackgroundImageAttribute}]:not(:hover)::before {
   content: "";
   backdrop-filter: blur(40px);
   position: absolute;
   inset: 0;
   z-index: -1;
 }
-.${loadingBlurClass}:not(:hover) {
+[${loadingBackgroundImageAttribute}]:not(:hover) {
   contain: paint;
 }
 `);
@@ -145,13 +145,13 @@ const processBackgroundGifs = function (gifBackgroundElements) {
     const sourceUrl = sourceValue.match(sourceUrlRegex)?.[0];
 
     if (sourceUrl) {
-      Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.classList.add(loadingBlurClass);
+      Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.setAttribute(loadingBackgroundImageAttribute, '');
       gifBackgroundElement.style.setProperty(
         pausedBackgroundImageVar,
         sourceValue.replaceAll(sourceUrlRegex, await createPausedUrl(sourceUrl))
       );
       addLabel(gifBackgroundElement, true);
-      gifBackgroundElement.classList.remove(loadingBlurClass);
+      gifBackgroundElement.removeAttribute(loadingBackgroundImageAttribute);
     }
   });
 };
