@@ -50,7 +50,8 @@ export const styleElement = buildStyle(`
 .${labelClass}${hovered},
 img:has(~ .${canvasClass}):not(${hovered}),
 img:has(~ [${posterAttribute}]):not(${hovered}),
-:has(> .${labelClass}) > ${keyToCss('loader')}:not(${hovered}) {
+.${labelClass} ~ ${keyToCss('loader')}:not(${hovered}),
+${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
   display: none;
 }
 
