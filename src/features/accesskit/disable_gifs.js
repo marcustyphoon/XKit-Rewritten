@@ -29,8 +29,6 @@ export const styleElement = buildStyle(`
   font-size: 1rem;
   font-weight: bold;
   line-height: 1em;
-
-  z-index: 1;
 }
 
 .${labelClass}::before {
@@ -50,7 +48,6 @@ export const styleElement = buildStyle(`
 .${labelClass}${hovered},
 img:has(~ .${canvasClass}):not(${hovered}),
 img:has(~ [${posterAttribute}]):not(${hovered}),
-.${labelClass} ~ ${keyToCss('loader')}:not(${hovered}),
 ${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
   display: none;
 }
@@ -119,7 +116,7 @@ const processGifs = function (gifElements) {
       ...gifElement.parentNode.querySelectorAll(`.${labelClass}`)
     ];
     if (pausedGifElements.length) {
-      gifElement.after(...pausedGifElements);
+      gifElement.parentNode.append(...pausedGifElements);
       return;
     }
 
