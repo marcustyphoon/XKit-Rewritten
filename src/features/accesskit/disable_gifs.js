@@ -10,6 +10,9 @@ const pausedContentVar = '--xkit-paused-gif-content';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
 const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
+const loadingBackgroundImageAttribute = 'data-paused-gif-background-loading';
+
+let enabledTimestamp;
 
 let loadingMode;
 
@@ -62,6 +65,18 @@ img[style*="${pausedContentVar}"]:not(${hovered}) {
 }
 [style*="${pausedBackgroundImageVar}"]:not(${hovered}) {
   background-image: var(${pausedBackgroundImageVar}) !important;
+}
+
+[${loadingBackgroundImageAttribute}]:not(${hovered})::before {
+  content: "";
+  backdrop-filter: blur(40px);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+[${loadingBackgroundImageAttribute}] {
+  contain: paint;
+  filter: unset !important;
 }
 `);
 
@@ -171,11 +186,13 @@ const processBackgroundGifs = function (gifBackgroundElements) {
     const sourceUrl = sourceValue.match(sourceUrlRegex)?.[0];
 
     if (sourceUrl) {
+      Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.setAttribute(loadingBackgroundImageAttribute, '');
+      addLabel(gifBackgroundElement, true);
       gifBackgroundElement.style.setProperty(
         pausedBackgroundImageVar,
         sourceValue.replaceAll(sourceUrlRegex, await createPausedUrl(sourceUrl))
       );
-      addLabel(gifBackgroundElement, true);
+      gifBackgroundElement.removeAttribute(loadingBackgroundImageAttribute);
     }
   });
 };
@@ -207,6 +224,7 @@ const onStorageChanged = async function (changes, areaName) {
 
 export const main = async function () {
   ({ disable_gifs_loading_mode: loadingMode } = await getPreferences('accesskit'));
+  enabledTimestamp = Date.now();
 
   const gifImage = `
     :is(figure, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
@@ -246,4 +264,5 @@ export const clean = async function () {
     .forEach(element => element.style.removeProperty(pausedContentVar));
   [...document.querySelectorAll(`img[style*="${pausedBackgroundImageVar}"]`)]
     .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
+  $(`[${loadingBackgroundImageAttribute}]`).removeAttr(loadingBackgroundImageAttribute);
 };
