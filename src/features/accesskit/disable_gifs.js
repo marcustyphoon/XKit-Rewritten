@@ -57,7 +57,7 @@ export const styleElement = buildStyle(`
 
 .${loadingBlurClass}:not(:hover)::before {
   content: "";
-  backdrop-filter: blur(50px);
+  backdrop-filter: blur(40px);
   position: absolute;
   inset: 0;
   z-index: -1;
