@@ -203,4 +203,5 @@ export const clean = async function () {
   $(`.${canvasClass}, .${labelClass}`).remove();
   [...document.querySelectorAll(`img[style*="${pausedBackgroundImageVar}"]`)]
     .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
+  $(`[${loadingBackgroundImageAttribute}]`).removeAttr(loadingBackgroundImageAttribute);
 };
