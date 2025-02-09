@@ -81,14 +81,9 @@ img[style*="${pausedContentVar}"]:not(${hovered}) {
 `);
 
 const isAnimatedDefault = true;
-const isAnimated = memoize(async (sourceUrl) => {
-  // treat all GIFs like they're animated
-  if (sourceUrl.includes('.gif')) return true;
-
+const isAnimated = async (response) => {
   if (typeof ImageDecoder !== 'function') return isAnimatedDefault;
   /* globals ImageDecoder */
-
-  const response = await fetch(sourceUrl);
 
   const contentType = response.headers.get('Content-Type');
   const supported = await ImageDecoder.isTypeSupported(contentType);
@@ -101,7 +96,7 @@ const isAnimated = memoize(async (sourceUrl) => {
   });
   await decoder.tracks.ready;
   return decoder.tracks.selectedTrack.animated;
-});
+};
 
 const addLabel = (element, inside = false) => {
   if (element.parentNode.querySelector(`.${labelClass}`) === null) {
@@ -127,10 +122,11 @@ const loaded = gifElement =>
 
 const pauseGif = async function (gifElement) {
   Date.now() - enabledTimestamp >= 100 && gifElement.parentElement?.setAttribute(hasLoadingContentImageAttribute, '');
-  addLabel(gifElement);
   await loaded(gifElement);
-  if (await isAnimated(gifElement.currentSrc)) {
-    gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
+  const { isAnimated, pausedUrl } = await processUrl(gifElement.currentSrc);
+  if (isAnimated) {
+    addLabel(gifElement);
+    gifElement.style.setProperty(pausedContentVar, `url(${pausedUrl})`);
   }
   gifElement.parentElement?.removeAttribute(hasLoadingContentImageAttribute);
 };
@@ -152,24 +148,27 @@ const processGifs = function (gifElements) {
 
 const sourceUrlRegex = /(?<=url\(["'])[^)]*?\.gifv?(?=["']\))/g;
 
-const pausedUrlCache = {};
-const createPausedUrl = (sourceUrl) => {
-  pausedUrlCache[sourceUrl] ??= new Promise(resolve => {
-    fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } })
-      .then(response => response.blob())
-      .then(blob => createImageBitmap(blob))
-      .then(imageBitmap => {
-        const canvas = document.createElement('canvas');
-        canvas.width = imageBitmap.width;
-        canvas.height = imageBitmap.height;
-        canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
-        canvas.toBlob(blob =>
-          resolve(URL.createObjectURL(blob))
-        );
-      });
-  });
-  return pausedUrlCache[sourceUrl];
-};
+const processUrl = memoize(async sourceUrl => {
+  const response = await fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } });
+  // treat all GIFs like they're animated
+  if (sourceUrl.includes('.gif') || (await isAnimated(response.clone()))) {
+    return new Promise(resolve =>
+      response.blob()
+        .then(blob => createImageBitmap(blob))
+        .then(imageBitmap => {
+          const canvas = document.createElement('canvas');
+          canvas.width = imageBitmap.width;
+          canvas.height = imageBitmap.height;
+          canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
+          canvas.toBlob(blob =>
+            resolve({ isAnimated: true, pausedUrl: URL.createObjectURL(blob) })
+          );
+        })
+    );
+  } else {
+    return { isAnimated: false };
+  }
+});
 
 const processBackgroundGifs = function (gifBackgroundElements) {
   gifBackgroundElements.forEach(async gifBackgroundElement => {
@@ -178,11 +177,14 @@ const processBackgroundGifs = function (gifBackgroundElements) {
 
     if (sourceUrl) {
       Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.setAttribute(loadingBackgroundImageAttribute, '');
-      addLabel(gifBackgroundElement, true);
-      gifBackgroundElement.style.setProperty(
-        pausedBackgroundImageVar,
-        sourceValue.replaceAll(sourceUrlRegex, await createPausedUrl(sourceUrl))
-      );
+      const { isAnimated, pausedUrl } = await processUrl(sourceUrl);
+      if (isAnimated) {
+        addLabel(gifBackgroundElement, true);
+        gifBackgroundElement.style.setProperty(
+          pausedBackgroundImageVar,
+          sourceValue.replaceAll(sourceUrlRegex, pausedUrl)
+        );
+      }
       gifBackgroundElement.removeAttribute(loadingBackgroundImageAttribute);
     }
   });
