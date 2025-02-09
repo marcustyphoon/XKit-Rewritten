@@ -60,12 +60,10 @@ export const styleElement = buildStyle(`
   backdrop-filter: blur(50px);
   position: absolute;
   inset: 0;
+  z-index: -1;
 }
 .${loadingBlurClass}:not(:hover) {
   contain: paint;
-}
-.${loadingBlurClass}:not(:hover) > * {
-  z-index: 1;
 }
 `);
 
