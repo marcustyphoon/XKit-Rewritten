@@ -54,7 +54,6 @@ export const styleElement = buildStyle(`
   background-image: var(${pausedBackgroundImageVar}) !important;
 }
 
-
 .${loadingBlurClass}:not(:hover)::before {
   content: "";
   backdrop-filter: blur(40px);
