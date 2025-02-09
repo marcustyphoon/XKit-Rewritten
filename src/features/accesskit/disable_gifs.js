@@ -63,6 +63,7 @@ export const styleElement = buildStyle(`
 }
 [${loadingBackgroundImageAttribute}]:not(:hover) {
   contain: paint;
+  filter: unset !important;
 }
 `);
 
