@@ -6,13 +6,14 @@ import { getPreferences } from '../../utils/preferences.js';
 
 const canvasClass = 'xkit-paused-gif-placeholder';
 const posterAttribute = 'data-paused-gif-placeholder';
+const pausedContentVar = '--xkit-paused-gif-content';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
-const backgroundGifClass = 'xkit-paused-background-gif';
+const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 
 let loadingMode;
 
-const hovered = `:is(:hover > *, .${containerClass}:hover *)`;
+const hovered = `:is(:hover > *, .${containerClass}:hover *, a:hover + div *)`;
 
 export const styleElement = buildStyle(`
 .${labelClass} {
@@ -56,13 +57,11 @@ ${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
   visibility: visible !important;
 }
 
-.${backgroundGifClass}:not(:hover) {
-  background-image: none !important;
-  background-color: rgb(var(--secondary-accent));
+img[style*="${pausedContentVar}"]:not(${hovered}) {
+  content: var(${pausedContentVar});
 }
-
-.${backgroundGifClass}:not(:hover) > div {
-  color: rgb(var(--black));
+[style*="${pausedBackgroundImageVar}"]:not(${hovered}) {
+  background-image: var(${pausedBackgroundImageVar}) !important;
 }
 `);
 
@@ -127,10 +126,57 @@ const processGifs = function (gifElements) {
   });
 };
 
+const pauseContentGif = async function (gifElement) {
+  await loaded(gifElement);
+  gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
+  addLabel(gifElement);
+};
+
+const processContentGifs = function (gifElements) {
+  gifElements.forEach(gifElement => {
+    if (gifElement.closest('.block-editor-writing-flow')) return;
+    const existingLabelElements = gifElement.parentNode.querySelectorAll(`.${labelClass}`);
+    if (existingLabelElements.length) {
+      gifElement.after(...existingLabelElements);
+      return;
+    }
+    pauseContentGif(gifElement);
+  });
+};
+
+const sourceUrlRegex = /(?<=url\(["'])[^)]*?\.gifv?(?=["']\))/g;
+
+const pausedUrlCache = {};
+const createPausedUrl = (sourceUrl) => {
+  pausedUrlCache[sourceUrl] ??= new Promise(resolve => {
+    fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } })
+      .then(response => response.blob())
+      .then(blob => createImageBitmap(blob))
+      .then(imageBitmap => {
+        const canvas = document.createElement('canvas');
+        canvas.width = imageBitmap.width;
+        canvas.height = imageBitmap.height;
+        canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
+        canvas.toBlob(blob =>
+          resolve(URL.createObjectURL(blob))
+        );
+      });
+  });
+  return pausedUrlCache[sourceUrl];
+};
+
 const processBackgroundGifs = function (gifBackgroundElements) {
-  gifBackgroundElements.forEach(gifBackgroundElement => {
-    gifBackgroundElement.classList.add(backgroundGifClass);
-    addLabel(gifBackgroundElement, true);
+  gifBackgroundElements.forEach(async gifBackgroundElement => {
+    const sourceValue = gifBackgroundElement.style.backgroundImage;
+    const sourceUrl = sourceValue.match(sourceUrlRegex)?.[0];
+
+    if (sourceUrl) {
+      gifBackgroundElement.style.setProperty(
+        pausedBackgroundImageVar,
+        sourceValue.replaceAll(sourceUrlRegex, await createPausedUrl(sourceUrl))
+      );
+      addLabel(gifBackgroundElement, true);
+    }
   });
 };
 
@@ -163,12 +209,16 @@ export const main = async function () {
   ({ disable_gifs_loading_mode: loadingMode } = await getPreferences('accesskit'));
 
   const gifImage = `
-    :is(figure, ${keyToCss('tagImage', 'takeoverBanner')}) img[srcset*=".gif"]:not(${keyToCss('poster')})
+    :is(figure, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
+  const gifContentImage = `
+    :is(main.labs, ${keyToCss('headerBanner', 'headerImage', 'typeaheadRow', 'linkCard')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
+  `;
+  pageModifications.register(gifContentImage, processContentGifs);
 
   const gifBackgroundImage = `
-    ${keyToCss('communityHeaderImage', 'bannerImage')}[style*=".gif"]
+    ${keyToCss('communityHeaderImage', 'communityCategoryImage', 'bannerImage', 'videoHubCardWrapper')}[style*=".gif"]
   `;
   pageModifications.register(gifBackgroundImage, processBackgroundGifs);
 
@@ -192,5 +242,8 @@ export const clean = async function () {
   );
 
   $(`.${canvasClass}, .${labelClass}`).remove();
-  $(`.${backgroundGifClass}`).removeClass(backgroundGifClass);
+  [...document.querySelectorAll(`img[style*="${pausedContentVar}"]`)]
+    .forEach(element => element.style.removeProperty(pausedContentVar));
+  [...document.querySelectorAll(`img[style*="${pausedBackgroundImageVar}"]`)]
+    .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
 };
