@@ -146,11 +146,11 @@ const processBackgroundGifs = function (gifBackgroundElements) {
 
     if (sourceUrl) {
       Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.setAttribute(loadingBackgroundImageAttribute, '');
+      addLabel(gifBackgroundElement, true);
       gifBackgroundElement.style.setProperty(
         pausedBackgroundImageVar,
         sourceValue.replaceAll(sourceUrlRegex, await createPausedUrl(sourceUrl))
       );
-      addLabel(gifBackgroundElement, true);
       gifBackgroundElement.removeAttribute(loadingBackgroundImageAttribute);
     }
   });
