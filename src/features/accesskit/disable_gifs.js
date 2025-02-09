@@ -5,7 +5,6 @@ import { buildStyle, postSelector } from '../../utils/interface.js';
 import { getPreferences } from '../../utils/preferences.js';
 import { memoize } from '../../utils/memoize.js';
 
-const canvasClass = 'xkit-paused-gif-placeholder';
 const posterAttribute = 'data-paused-gif-placeholder';
 const pausedContentVar = '--xkit-paused-gif-content';
 const labelClass = 'xkit-paused-gif-label';
@@ -44,14 +43,7 @@ export const styleElement = buildStyle(`
   font-size: 0.6rem;
 }
 
-.${canvasClass} {
-  position: absolute;
-  visibility: visible;
-}
-
-.${canvasClass}${hovered},
 .${labelClass}${hovered},
-img:has(~ .${canvasClass}):not(${hovered}),
 img:has(~ [${posterAttribute}]):not(${hovered}),
 ${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
   display: none;
@@ -122,65 +114,30 @@ const pauseGifWithPoster = async function (gifElement, posterElement) {
   posterElement.setAttribute(posterAttribute, '');
 };
 
-const pauseGif = async function (gifElement) {
-  await loaded(gifElement);
-  if (!await isAnimated(gifElement.currentSrc)) return;
-  gifElement.decode();
-
-  const image = new Image();
-  image.src = gifElement.currentSrc;
-  image.onload = () => {
-    if (gifElement.parentNode && gifElement.parentNode.querySelector(`.${canvasClass}`) === null) {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      canvas.className = gifElement.className;
-      canvas.classList.add(canvasClass);
-      canvas.getContext('2d').drawImage(image, 0, 0);
-      gifElement.parentNode.append(canvas);
-      addLabel(canvas);
-    }
-  };
-};
-
 const loaded = gifElement =>
   (gifElement.complete && gifElement.currentSrc) ||
   new Promise(resolve => gifElement.addEventListener('load', resolve, { once: true }));
 
-const processGifs = function (gifElements) {
-  gifElements.forEach(async gifElement => {
-    if (gifElement.closest('.block-editor-writing-flow')) return;
-    const pausedGifElements = [
-      ...gifElement.parentNode.querySelectorAll(`.${canvasClass}`),
-      ...gifElement.parentNode.querySelectorAll(`.${labelClass}`)
-    ];
-    if (pausedGifElements.length) {
-      gifElement.parentNode.append(...pausedGifElements);
-      return;
-    }
-
-    const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
-    posterElement?.currentSrc
-      ? pauseGifWithPoster(gifElement, posterElement)
-      : pauseGif(gifElement);
-  });
-};
-
-const pauseContentGif = async function (gifElement) {
-  await loaded(gifElement);
-  gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
+const pauseGif = async function (gifElement) {
   addLabel(gifElement);
+  await loaded(gifElement);
+  if (await isAnimated(gifElement.currentSrc)) {
+    gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
+  }
 };
 
-const processContentGifs = function (gifElements) {
+const processGifs = function (gifElements) {
   gifElements.forEach(gifElement => {
     if (gifElement.closest('.block-editor-writing-flow')) return;
     const existingLabelElements = gifElement.parentNode.querySelectorAll(`.${labelClass}`);
     if (existingLabelElements.length) {
-      gifElement.after(...existingLabelElements);
+      gifElement.parentNode.append(...existingLabelElements);
       return;
     }
-    pauseContentGif(gifElement);
+    const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
+    posterElement?.currentSrc
+      ? pauseGifWithPoster(gifElement, posterElement)
+      : pauseGif(gifElement);
   });
 };
 
@@ -252,13 +209,9 @@ export const main = async function () {
   enabledTimestamp = Date.now();
 
   const gifImage = `
-    :is(figure, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
+    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow', 'linkCard')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
-  const gifContentImage = `
-    :is(main.labs, ${keyToCss('headerBanner', 'headerImage', 'typeaheadRow', 'linkCard')}) img:is([srcset*=".gif"], [src*=".gif"]):not(${keyToCss('poster')})
-  `;
-  pageModifications.register(gifContentImage, processContentGifs);
 
   const gifBackgroundImage = `
     ${keyToCss('communityHeaderImage', 'communityCategoryImage', 'bannerImage', 'videoHubCardWrapper')}[style*=".gif"]
@@ -284,7 +237,7 @@ export const clean = async function () {
     wrapper.replaceWith(...wrapper.children)
   );
 
-  $(`.${canvasClass}, .${labelClass}`).remove();
+  $(`.${labelClass}`).remove();
   [...document.querySelectorAll(`img[style*="${pausedContentVar}"]`)]
     .forEach(element => element.style.removeProperty(pausedContentVar));
   [...document.querySelectorAll(`img[style*="${pausedBackgroundImageVar}"]`)]
