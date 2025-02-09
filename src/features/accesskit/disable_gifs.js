@@ -44,6 +44,11 @@ export const styleElement = buildStyle(`
   font-size: 0.6rem;
 }
 
+${keyToCss('blogCard')} ${keyToCss('headerImage')} .${labelClass} {
+  font-size: 0.8rem;
+  top: calc(140px - 1em - 2.2ch);
+}
+
 .${labelClass}${hovered},
 img:has(~ [${posterAttribute}]):not(${hovered}),
 ${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
