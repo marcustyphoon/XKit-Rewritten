@@ -82,6 +82,7 @@ const addLabel = (element, inside = false) => {
 
 const pauseGifWithPoster = async function (gifElement, posterElement) {
   addLabel(gifElement);
+  gifElement.decoding = 'sync';
   loadingMode === 'immediate' && await loaded(gifElement);
   posterElement.setAttribute(posterAttribute, '');
 };
