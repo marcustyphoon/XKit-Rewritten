@@ -78,29 +78,6 @@ img[style*="${pausedContentVar}"]:not(${hovered}) {
 }
 `);
 
-const isAnimatedDefault = true;
-const isAnimated = memoize(async (sourceUrl) => {
-  // treat all GIFs like they're animated
-  if (sourceUrl.includes('.gif')) return true;
-
-  if (typeof ImageDecoder !== 'function') return isAnimatedDefault;
-  /* globals ImageDecoder */
-
-  const response = await fetch(sourceUrl);
-
-  const contentType = response.headers.get('Content-Type');
-  const supported = await ImageDecoder.isTypeSupported(contentType);
-  if (!supported) return isAnimatedDefault;
-
-  const decoder = new ImageDecoder({
-    type: contentType,
-    data: response.body,
-    preferAnimation: true
-  });
-  await decoder.tracks.ready;
-  return decoder.tracks.selectedTrack.animated;
-});
-
 const addLabel = (element, inside = false) => {
   if (element.parentNode.querySelector(`.${labelClass}`) === null) {
     const gifLabel = document.createElement('p');
@@ -124,10 +101,11 @@ const loaded = gifElement =>
   new Promise(resolve => gifElement.addEventListener('load', resolve, { once: true }));
 
 const pauseGif = async function (gifElement) {
-  addLabel(gifElement);
   await loaded(gifElement);
-  if (await isAnimated(gifElement.currentSrc)) {
-    gifElement.style.setProperty(pausedContentVar, `url(${await createPausedUrl(gifElement.currentSrc)})`);
+  const pausedUrl = await createPausedUrl(gifElement.currentSrc);
+  if (pausedUrl) {
+    addLabel(gifElement);
+    gifElement.style.setProperty(pausedContentVar, `url(${pausedUrl})`);
   }
 };
 
@@ -148,24 +126,35 @@ const processGifs = function (gifElements) {
 
 const sourceUrlRegex = /(?<=url\(["'])[^)]*?\.gifv?(?=["']\))/g;
 
-const pausedUrlCache = {};
-const createPausedUrl = (sourceUrl) => {
-  pausedUrlCache[sourceUrl] ??= new Promise(resolve => {
-    fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } })
-      .then(response => response.blob())
-      .then(blob => createImageBitmap(blob))
-      .then(imageBitmap => {
-        const canvas = document.createElement('canvas');
-        canvas.width = imageBitmap.width;
-        canvas.height = imageBitmap.height;
-        canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
-        canvas.toBlob(blob =>
-          resolve(URL.createObjectURL(blob))
-        );
-      });
-  });
-  return pausedUrlCache[sourceUrl];
-};
+/* globals ImageDecoder */
+const createPausedUrl = memoize(async sourceUrl => {
+  const response = await fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } });
+  const contentType = response.headers.get('Content-Type');
+  const canvas = document.createElement('canvas');
+
+  if (typeof ImageDecoder === 'function' && await ImageDecoder.isTypeSupported(contentType)) {
+    const decoder = new ImageDecoder({
+      type: contentType,
+      data: response.body,
+      preferAnimation: true
+    });
+    const { image: videoFrame } = await decoder.decode();
+    if (!decoder.tracks.selectedTrack.animated) {
+      // source image is not animated; decline to pause it
+      return undefined;
+    }
+    canvas.width = videoFrame.displayWidth;
+    canvas.height = videoFrame.displayHeight;
+    canvas.getContext('2d').drawImage(videoFrame, 0, 0);
+  } else {
+    const imageBitmap = await response.blob().then(window.createImageBitmap);
+    canvas.width = imageBitmap.width;
+    canvas.height = imageBitmap.height;
+    canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
+  }
+  const blob = await new Promise(resolve => canvas.toBlob(resolve));
+  return URL.createObjectURL(blob);
+});
 
 const processBackgroundGifs = function (gifBackgroundElements) {
   gifBackgroundElements.forEach(async gifBackgroundElement => {
@@ -174,11 +163,14 @@ const processBackgroundGifs = function (gifBackgroundElements) {
 
     if (sourceUrl) {
       Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.setAttribute(loadingBackgroundImageAttribute, '');
-      addLabel(gifBackgroundElement, true);
-      gifBackgroundElement.style.setProperty(
-        pausedBackgroundImageVar,
-        sourceValue.replaceAll(sourceUrlRegex, await createPausedUrl(sourceUrl))
-      );
+      const pausedUrl = await createPausedUrl(sourceUrl);
+      if (pausedUrl) {
+        addLabel(gifBackgroundElement, true);
+        gifBackgroundElement.style.setProperty(
+          pausedBackgroundImageVar,
+          sourceValue.replaceAll(sourceUrlRegex, pausedUrl)
+        );
+      }
       gifBackgroundElement.removeAttribute(loadingBackgroundImageAttribute);
     }
   });
