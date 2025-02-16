@@ -3,6 +3,7 @@ import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
 import { memoize } from '../../utils/memoize.js';
+import { inject } from '../../utils/inject.js';
 
 const posterAttribute = 'data-paused-gif-placeholder';
 const pausedContentVar = '--xkit-paused-gif-content';
@@ -66,35 +67,7 @@ const addLabel = (element, inside = false) => {
   }
 };
 
-const createPausedUrl = memoize(async sourceUrl => {
-  const response = await fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } });
-  const contentType = response.headers.get('Content-Type');
-  const canvas = document.createElement('canvas');
-
-  /* globals ImageDecoder */
-  if (typeof ImageDecoder === 'function' && await ImageDecoder.isTypeSupported(contentType)) {
-    const decoder = new ImageDecoder({
-      type: contentType,
-      data: response.body,
-      preferAnimation: true
-    });
-    const { image: videoFrame } = await decoder.decode();
-    if (!decoder.tracks.selectedTrack.animated) {
-      // source image is not animated; decline to pause it
-      return undefined;
-    }
-    canvas.width = videoFrame.displayWidth;
-    canvas.height = videoFrame.displayHeight;
-    canvas.getContext('2d').drawImage(videoFrame, 0, 0);
-  } else {
-    const imageBitmap = await response.blob().then(window.createImageBitmap);
-    canvas.width = imageBitmap.width;
-    canvas.height = imageBitmap.height;
-    canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
-  }
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 1));
-  return URL.createObjectURL(blob);
-});
+const createPausedUrl = memoize(sourceUrl => inject('/main_world/create_paused_url.js', [sourceUrl]));
 
 const loaded = gifElement =>
   (gifElement.complete && gifElement.currentSrc) ||
@@ -126,7 +99,7 @@ const processGifs = function (gifElements) {
     gifElement.decoding = 'sync';
 
     const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
-    posterElement?.currentSrc
+    false && posterElement?.currentSrc
       ? pauseGifWithPoster(gifElement, posterElement)
       : pauseGif(gifElement);
   });
