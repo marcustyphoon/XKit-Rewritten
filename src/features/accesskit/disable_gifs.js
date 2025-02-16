@@ -152,7 +152,7 @@ const createPausedUrl = memoize(async sourceUrl => {
     canvas.height = imageBitmap.height;
     canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
   }
-  const blob = await new Promise(resolve => canvas.toBlob(resolve));
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 1));
   return URL.createObjectURL(blob);
 });
 
