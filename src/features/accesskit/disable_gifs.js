@@ -80,8 +80,9 @@ const pauseGifWithPoster = async function (gifElement, posterElement) {
 };
 
 const pauseGif = async function (gifElement) {
-  await loaded(gifElement);
-  const pausedUrl = await createPausedUrl(gifElement.currentSrc);
+  const src = gifElement.srcset?.split(',').at(-1)?.split(' ').filter(Boolean).at(0) ??
+    await loaded(gifElement).then(() => gifElement.currentSrc);
+  const pausedUrl = await createPausedUrl(src);
   if (!pausedUrl) return;
 
   gifElement.style.setProperty(pausedContentVar, `url(${pausedUrl})`);

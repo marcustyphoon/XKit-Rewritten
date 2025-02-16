@@ -1,5 +1,6 @@
 export default function createPausedUrl (sourceUrl) {
   const workerFunc = async ({ data: sourceUrl }) => {
+    console.log('worker', sourceUrl);
     const response = await fetch(sourceUrl, { cache: 'force-cache' });
     const contentType = response.headers.get('Content-Type');
     let canvas;
@@ -19,6 +20,7 @@ export default function createPausedUrl (sourceUrl) {
       canvas = new OffscreenCanvas(videoFrame.displayWidth, videoFrame.displayHeight);
       canvas.getContext('2d').drawImage(videoFrame, 0, 0);
     } else {
+      throw new Error('not supported');
       const imageBitmap = await response.blob().then(window.createImageBitmap);
       canvas = new OffscreenCanvas(imageBitmap.displayWidth, imageBitmap.displayHeight);
       canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
@@ -27,8 +29,10 @@ export default function createPausedUrl (sourceUrl) {
     postMessage({ sourceUrl, result: URL.createObjectURL(blob) });
   };
 
-  window.createPausedUrlWorker ??= new Worker(
-    URL.createObjectURL(new Blob([`self.onmessage = ${workerFunc.toString()};`], { type: 'text/javascript' })),
+  window.xkitCreatePausedUrlWorkerUrl ??= URL.createObjectURL(new Blob([`self.onmessage = ${workerFunc.toString()};`], { type: 'text/javascript' }))
+
+  const worker = new Worker(
+    window.xkitCreatePausedUrlWorkerUrl,
     { type: 'module' }
   );
 
@@ -36,10 +40,10 @@ export default function createPausedUrl (sourceUrl) {
     const callback = ({ data }) => {
       if (data.sourceUrl === sourceUrl) {
         resolve(data.result);
-        window.createPausedUrlWorker.removeEventListener('message', callback);
+        worker.removeEventListener('message', callback);
       }
     };
-    window.createPausedUrlWorker.addEventListener('message', callback);
-    window.createPausedUrlWorker.postMessage(sourceUrl);
+    worker.addEventListener('message', callback);
+    worker.postMessage(sourceUrl);
   });
 }
