@@ -3,6 +3,7 @@ import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
 import { memoize } from '../../utils/memoize.js';
+import { getPreferences } from '../../utils/preferences.js';
 
 const posterAttribute = 'data-paused-gif-placeholder';
 const pausedContentVar = '--xkit-paused-gif-content';
@@ -10,6 +11,8 @@ const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 const hoverContainerAttribute = 'data-paused-gif-hover-container';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
+
+let loadingMode;
 
 const hovered = `:is(:hover > *, [${hoverContainerAttribute}]:hover *)`;
 
@@ -109,7 +112,7 @@ const loaded = gifElement =>
 
 const pauseGifWithPoster = async function (gifElement, posterElement) {
   addLabel(gifElement);
-  await loaded(gifElement); // skip this to delay gif loading until the user hovers
+  loadingMode === 'immediate' && await loaded(gifElement);
   posterElement.setAttribute(posterAttribute, '');
 };
 
@@ -174,7 +177,18 @@ const processRows = function (rowsElements) {
 const processHoverableElements = elements =>
   elements.forEach(element => element.setAttribute(hoverContainerAttribute, ''));
 
+const onStorageChanged = async function (changes, areaName) {
+  if (areaName !== 'local') return;
+
+  const { 'accesskit.preferences.disable_gifs_loading_mode': modeChanges } = changes;
+  if (modeChanges?.oldValue === undefined) return;
+
+  loadingMode = modeChanges.newValue;
+};
+
 export const main = async function () {
+  ({ disable_gifs_loading_mode: loadingMode } = await getPreferences('accesskit'));
+
   const gifImage = `
     :is(figure, ${keyToCss('tagImage', 'takeoverBanner')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
@@ -194,9 +208,13 @@ export const main = async function () {
     `:is(${postSelector}, ${keyToCss('blockEditorContainer')}) ${keyToCss('rows')}`,
     processRows
   );
+
+  browser.storage.onChanged.addListener(onStorageChanged);
 };
 
 export const clean = async function () {
+  browser.storage.onChanged.removeListener(onStorageChanged);
+
   pageModifications.unregister(processGifs);
   pageModifications.unregister(processBackgroundGifs);
   pageModifications.unregister(processRows);
