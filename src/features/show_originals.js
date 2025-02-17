@@ -29,6 +29,7 @@ let showReblogsWithContributedContent;
 let showReblogsOfNotFollowing;
 let whitelist;
 let disabledBlogs;
+let showReverse;
 
 const lengthenTimeline = async (timeline) => {
   if (!timeline.querySelector(keyToCss('manualPaginatorButtons'))) {
@@ -58,12 +59,15 @@ const addControls = async (timelineElement, location) => {
 
   const onButton = createButton(translate('Original Posts'), handleClick, 'on');
   const offButton = createButton(translate('All posts'), handleClick, 'off');
+  const reverseButton = createButton(translate('Hidden reblogs'), handleClick, 'reverse');
   const disabledButton = createButton(translate('All posts'), null, 'disabled');
 
   if (location === 'disabled') {
     controls.append(disabledButton);
   } else {
-    controls.append(onButton, offButton);
+    showReverse
+      ? controls.append(onButton, offButton, reverseButton)
+      : controls.append(onButton, offButton);
 
     lengthenTimeline(timelineElement);
     const { [storageKey]: savedModes = {} } = await browser.storage.local.get(storageKey);
@@ -125,7 +129,8 @@ export const main = async function () {
     showOwnReblogs,
     showReblogsWithContributedContent,
     showReblogsOfNotFollowing,
-    whitelistedUsernames
+    whitelistedUsernames,
+    showReverse
   } = await getPreferences('show_originals'));
 
   whitelist = whitelistedUsernames.split(',').map(username => username.trim());
