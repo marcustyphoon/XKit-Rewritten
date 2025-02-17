@@ -2,11 +2,21 @@ import { pageModifications } from '../../utils/mutations.js';
 import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
+import { getPreferences } from '../../utils/preferences.js';
+import { memoize } from '../../utils/memoize.js';
 
-const canvasClass = 'xkit-paused-gif-placeholder';
+const posterAttribute = 'data-paused-gif-placeholder';
+const pausedContentVar = '--xkit-paused-gif-content';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
-const backgroundGifClass = 'xkit-paused-background-gif';
+const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
+const loadingBackgroundImageAttribute = 'data-paused-gif-background-loading';
+
+let enabledTimestamp;
+
+let loadingMode;
+
+const hovered = `:is(:hover > *, .${containerClass}:hover *, a:hover + div *)`;
 
 export const styleElement = buildStyle(`
 .${labelClass} {
@@ -33,27 +43,38 @@ export const styleElement = buildStyle(`
   font-size: 0.6rem;
 }
 
-.${canvasClass} {
-  position: absolute;
-  visibility: visible;
-
-  background-color: rgb(var(--white));
+${keyToCss('blogCard')} ${keyToCss('headerImage')} .${labelClass} {
+  font-size: 0.8rem;
+  top: calc(140px - 1em - 2.2ch);
 }
 
-*:hover > .${canvasClass},
-*:hover > .${labelClass},
-.${containerClass}:hover .${canvasClass},
-.${containerClass}:hover .${labelClass} {
+.${labelClass}${hovered},
+img:has(~ [${posterAttribute}]):not(${hovered}),
+${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
   display: none;
 }
 
-.${backgroundGifClass}:not(:hover) {
-  background-image: none !important;
-  background-color: rgb(var(--secondary-accent));
+[${posterAttribute}]:not(${hovered}) {
+  visibility: visible !important;
 }
 
-.${backgroundGifClass}:not(:hover) > div {
-  color: rgb(var(--black));
+img[style*="${pausedContentVar}"]:not(${hovered}) {
+  content: var(${pausedContentVar});
+}
+[style*="${pausedBackgroundImageVar}"]:not(${hovered}) {
+  background-image: var(${pausedBackgroundImageVar}) !important;
+}
+
+[${loadingBackgroundImageAttribute}]:not(${hovered})::before {
+  content: "";
+  backdrop-filter: blur(40px);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+[${loadingBackgroundImageAttribute}] {
+  contain: paint;
+  filter: unset !important;
 }
 `);
 
@@ -68,47 +89,90 @@ const addLabel = (element, inside = false) => {
   }
 };
 
-const pauseGif = function (gifElement) {
-  const image = new Image();
-  image.src = gifElement.currentSrc;
-  image.onload = () => {
-    if (gifElement.parentNode && gifElement.parentNode.querySelector(`.${canvasClass}`) === null) {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      canvas.className = gifElement.className;
-      canvas.classList.add(canvasClass);
-      canvas.getContext('2d').drawImage(image, 0, 0);
-      gifElement.parentNode.append(canvas);
-      addLabel(gifElement);
-    }
-  };
+const pauseGifWithPoster = async function (gifElement, posterElement) {
+  addLabel(gifElement);
+  loadingMode === 'immediate' && await loaded(gifElement);
+  posterElement.setAttribute(posterAttribute, '');
+};
+
+const loaded = gifElement =>
+  (gifElement.complete && gifElement.currentSrc) ||
+  new Promise(resolve => gifElement.addEventListener('load', resolve, { once: true }));
+
+const pauseGif = async function (gifElement) {
+  await loaded(gifElement);
+  const pausedUrl = await createPausedUrl(gifElement.currentSrc);
+  if (pausedUrl) {
+    addLabel(gifElement);
+    gifElement.style.setProperty(pausedContentVar, `url(${pausedUrl})`);
+  }
 };
 
 const processGifs = function (gifElements) {
   gifElements.forEach(gifElement => {
     if (gifElement.closest('.block-editor-writing-flow')) return;
-    const pausedGifElements = [
-      ...gifElement.parentNode.querySelectorAll(`.${canvasClass}`),
-      ...gifElement.parentNode.querySelectorAll(`.${labelClass}`)
-    ];
-    if (pausedGifElements.length) {
-      gifElement.after(...pausedGifElements);
+    const existingLabelElements = gifElement.parentNode.querySelectorAll(`.${labelClass}`);
+    if (existingLabelElements.length) {
+      gifElement.parentNode.append(...existingLabelElements);
       return;
     }
-
-    if (gifElement.complete && gifElement.currentSrc) {
-      pauseGif(gifElement);
-    } else {
-      gifElement.onload = () => pauseGif(gifElement);
-    }
+    gifElement.decoding = 'sync';
+    const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
+    posterElement?.currentSrc
+      ? pauseGifWithPoster(gifElement, posterElement)
+      : pauseGif(gifElement);
   });
 };
 
+const sourceUrlRegex = /(?<=url\(["'])[^)]*?\.gifv?(?=["']\))/g;
+
+/* globals ImageDecoder */
+const createPausedUrl = memoize(async sourceUrl => {
+  const response = await fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } });
+  const contentType = response.headers.get('Content-Type');
+  const canvas = document.createElement('canvas');
+
+  if (typeof ImageDecoder === 'function' && await ImageDecoder.isTypeSupported(contentType)) {
+    const decoder = new ImageDecoder({
+      type: contentType,
+      data: response.body,
+      preferAnimation: true
+    });
+    const { image: videoFrame } = await decoder.decode();
+    if (!decoder.tracks.selectedTrack.animated) {
+      // source image is not animated; decline to pause it
+      return undefined;
+    }
+    canvas.width = videoFrame.displayWidth;
+    canvas.height = videoFrame.displayHeight;
+    canvas.getContext('2d').drawImage(videoFrame, 0, 0);
+  } else {
+    const imageBitmap = await response.blob().then(window.createImageBitmap);
+    canvas.width = imageBitmap.width;
+    canvas.height = imageBitmap.height;
+    canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
+  }
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 1));
+  return URL.createObjectURL(blob);
+});
+
 const processBackgroundGifs = function (gifBackgroundElements) {
-  gifBackgroundElements.forEach(gifBackgroundElement => {
-    gifBackgroundElement.classList.add(backgroundGifClass);
-    addLabel(gifBackgroundElement, true);
+  gifBackgroundElements.forEach(async gifBackgroundElement => {
+    const sourceValue = gifBackgroundElement.style.backgroundImage;
+    const sourceUrl = sourceValue.match(sourceUrlRegex)?.[0];
+
+    if (sourceUrl) {
+      Date.now() - enabledTimestamp >= 100 && gifBackgroundElement.setAttribute(loadingBackgroundImageAttribute, '');
+      const pausedUrl = await createPausedUrl(sourceUrl);
+      if (pausedUrl) {
+        addLabel(gifBackgroundElement, true);
+        gifBackgroundElement.style.setProperty(
+          pausedBackgroundImageVar,
+          sourceValue.replaceAll(sourceUrlRegex, pausedUrl)
+        );
+      }
+      gifBackgroundElement.removeAttribute(loadingBackgroundImageAttribute);
+    }
   });
 };
 
@@ -128,14 +192,26 @@ const processRows = function (rowsElements) {
   });
 };
 
+const onStorageChanged = async function (changes, areaName) {
+  if (areaName !== 'local') return;
+
+  const { 'accesskit.preferences.disable_gifs_loading_mode': modeChanges } = changes;
+  if (modeChanges?.oldValue === undefined) return;
+
+  loadingMode = modeChanges.newValue;
+};
+
 export const main = async function () {
+  ({ disable_gifs_loading_mode: loadingMode } = await getPreferences('accesskit'));
+  enabledTimestamp = Date.now();
+
   const gifImage = `
-    :is(figure, ${keyToCss('tagImage', 'takeoverBanner')}) img[srcset*=".gif"]:not(${keyToCss('poster')})
+    :is(figure, main.labs, ${keyToCss('tagImage', 'takeoverBanner', 'videoHubsFeatured', 'headerBanner', 'headerImage', 'typeaheadRow', 'linkCard')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
 
   const gifBackgroundImage = `
-    ${keyToCss('communityHeaderImage', 'bannerImage')}[style*=".gif"]
+    ${keyToCss('communityHeaderImage', 'communityCategoryImage', 'bannerImage', 'videoHubCardWrapper')}[style*=".gif"]
   `;
   pageModifications.register(gifBackgroundImage, processBackgroundGifs);
 
@@ -143,9 +219,13 @@ export const main = async function () {
     `:is(${postSelector}, ${keyToCss('blockEditorContainer')}) ${keyToCss('rows')}`,
     processRows
   );
+
+  browser.storage.onChanged.addListener(onStorageChanged);
 };
 
 export const clean = async function () {
+  browser.storage.onChanged.removeListener(onStorageChanged);
+
   pageModifications.unregister(processGifs);
   pageModifications.unregister(processBackgroundGifs);
   pageModifications.unregister(processRows);
@@ -154,6 +234,10 @@ export const clean = async function () {
     wrapper.replaceWith(...wrapper.children)
   );
 
-  $(`.${canvasClass}, .${labelClass}`).remove();
-  $(`.${backgroundGifClass}`).removeClass(backgroundGifClass);
+  $(`.${labelClass}`).remove();
+  [...document.querySelectorAll(`img[style*="${pausedContentVar}"]`)]
+    .forEach(element => element.style.removeProperty(pausedContentVar));
+  [...document.querySelectorAll(`img[style*="${pausedBackgroundImageVar}"]`)]
+    .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
+  $(`[${loadingBackgroundImageAttribute}]`).removeAttr(loadingBackgroundImageAttribute);
 };
