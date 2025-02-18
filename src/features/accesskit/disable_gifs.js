@@ -38,6 +38,11 @@ export const styleElement = buildStyle(`
   font-size: 0.6rem;
 }
 
+${keyToCss('background')} > .${labelClass} {
+  /* prevent double labels in recommended post cards */
+  display: none;
+}
+
 .${labelClass}${hovered},
 ${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
   display: none;
