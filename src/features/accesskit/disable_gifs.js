@@ -57,13 +57,14 @@ img[style*="${pausedContentVar}"]:not(${hovered}) {
 `);
 
 const addLabel = (element, inside = false) => {
-  if (element.parentNode.querySelector(`.${labelClass}`) === null) {
+  const target = inside ? element : element.parentNode;
+  if (target && target.querySelector(`.${labelClass}`) === null) {
     const gifLabel = document.createElement('p');
     gifLabel.className = element.clientWidth && element.clientWidth < 150
       ? `${labelClass} mini`
       : labelClass;
 
-    inside ? element.append(gifLabel) : element.parentNode.append(gifLabel);
+    target.append(gifLabel);
   }
 };
 
@@ -120,10 +121,8 @@ const processGifs = function (gifElements) {
   gifElements.forEach(gifElement => {
     if (gifElement.closest('.block-editor-writing-flow')) return;
     const existingLabelElements = gifElement.parentNode.querySelectorAll(`.${labelClass}`);
-    if (existingLabelElements.length) {
-      gifElement.parentNode.append(...existingLabelElements);
-      return;
-    }
+    gifElement.parentNode.append(...existingLabelElements);
+
     gifElement.decoding = 'sync';
 
     const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
