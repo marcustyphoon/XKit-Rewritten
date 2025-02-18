@@ -3,6 +3,7 @@ import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
 import { memoize } from '../../utils/memoize.js';
+import { getPreferences } from '../../utils/preferences.js';
 
 const posterAttribute = 'data-paused-gif-placeholder';
 const pausedContentVar = '--xkit-paused-gif-content';
@@ -10,6 +11,7 @@ const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 const hoverContainerAttribute = 'data-paused-gif-hover-container';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
+const delayLoadClass = 'xkit-paused-gif-delay-load';
 
 const hovered = `:is(:hover > *, [${hoverContainerAttribute}]:hover *)`;
 
@@ -53,6 +55,9 @@ ${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
 }
 img:has(~ [${posterAttribute}]):not(${hovered}) {
   visibility: hidden !important;
+}
+body.${delayLoadClass} img:has(~ [${posterAttribute}]):not(${hovered}) {
+  display: none;
 }
 
 img[style*="${pausedContentVar}"]:not(${hovered}) {
@@ -166,7 +171,20 @@ const processRows = function (rowsElements) {
 const processHoverableElements = elements =>
   elements.forEach(element => element.setAttribute(hoverContainerAttribute, ''));
 
+const onStorageChanged = async function (changes, areaName) {
+  if (areaName !== 'local') return;
+
+  const { 'accesskit.preferences.disable_gifs_loading_mode': modeChanges } = changes;
+  if (modeChanges?.oldValue === undefined) return;
+
+  const loadingMode = modeChanges.newValue;
+  document.body.classList[loadingMode === 'delayed' ? 'add' : 'remove'](delayLoadClass);
+};
+
 export const main = async function () {
+  const { disable_gifs_loading_mode: loadingMode } = await getPreferences('accesskit');
+  document.body.classList[loadingMode === 'delayed' ? 'add' : 'remove'](delayLoadClass);
+
   const gifImage = `
     :is(figure, ${keyToCss('tagImage', 'takeoverBanner')}) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
@@ -186,9 +204,13 @@ export const main = async function () {
     `:is(${postSelector}, ${keyToCss('blockEditorContainer')}) ${keyToCss('rows')}`,
     processRows
   );
+
+  browser.storage.onChanged.addListener(onStorageChanged);
 };
 
 export const clean = async function () {
+  browser.storage.onChanged.removeListener(onStorageChanged);
+
   pageModifications.unregister(processGifs);
   pageModifications.unregister(processBackgroundGifs);
   pageModifications.unregister(processRows);
@@ -205,4 +227,5 @@ export const clean = async function () {
     .forEach(element => element.style.removeProperty(pausedContentVar));
   [...document.querySelectorAll(`img[style*="${pausedBackgroundImageVar}"]`)]
     .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
+  $(`.${delayLoadClass}`).removeClass(delayLoadClass);
 };
