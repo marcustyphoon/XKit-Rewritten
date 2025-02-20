@@ -40,6 +40,10 @@ export const styleElement = buildStyle(`
 ${keyToCss('loader')}:has(~ .${labelClass}):not(${hovered}) {
   display: none;
 }
+${keyToCss('background')} > .${labelClass} {
+  /* prevent double labels in recommended post cards */
+  display: none;
+}
 
 [${posterAttribute}]:not(${hovered}) {
   visibility: visible !important;
