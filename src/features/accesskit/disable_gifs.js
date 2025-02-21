@@ -12,6 +12,7 @@ const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
 
 const hovered = `:is(:hover > *, [${hoverContainerAttribute}]:hover *)`;
+const testHovered = `:is(:hover)`
 
 export const styleElement = buildStyle(`
 .${labelClass} {
@@ -45,11 +46,21 @@ ${keyToCss('background')} > .${labelClass} {
   display: none;
 }
 
-[${posterAttribute}]:not(${hovered}) {
+[${posterAttribute}] {
   visibility: visible !important;
+  left: 50% !important;
+  top: 50% !important;
 }
-img:has(~ [${posterAttribute}]):not(${hovered}) {
-  visibility: hidden !important;
+
+[${posterAttribute}]${testHovered} {
+  /* visibility: visible !important; */
+  outline: 1px solid blue;
+  outline-offset: -1px;
+}
+img:has(~ [${posterAttribute}]${testHovered}) {
+  /* visibility: hidden !important; */
+  outline: 1px solid red;
+  outline-offset: -1px;
 }
 
 img[style*="${pausedContentVar}"]:not(${hovered}) {
