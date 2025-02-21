@@ -172,7 +172,7 @@ const reprocessObserver = new MutationObserver(mutations =>
       processBackgroundGifs([target]);
     } else {
       target.style.removeProperty(pausedBackgroundImageVar);
-      target.querySelector(`.${labelClass}`)?.remove();
+      target.removeAttribute(labelAttribute);
     }
   })
 );
