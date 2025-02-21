@@ -3,6 +3,7 @@ import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
 import { memoize } from '../../utils/memoize.js';
+import { getPreferences } from '../../utils/preferences.js';
 
 const posterAttribute = 'data-paused-gif-placeholder';
 const pausedContentVar = '--xkit-paused-gif-content';
@@ -11,6 +12,8 @@ const hoverContainerAttribute = 'data-paused-gif-hover-container';
 const hoverFixAttribute = 'data-paused-gif-hover-fix';
 const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
+
+let loadingMode;
 
 const hovered = `:is(:hover > *, [${hoverContainerAttribute}]:hover *)`;
 
@@ -55,6 +58,9 @@ ${keyToCss('background')} > .${labelClass} {
 }
 img:has(~ [${posterAttribute}]:not(${hovered})) {
   visibility: hidden !important;
+}
+img:has(~ [${posterAttribute}="lazy"]:not(${hovered})) {
+  display: none;
 }
 
 img[style*="${pausedContentVar}"]:not(${hovered}) {
@@ -124,7 +130,7 @@ const processGifs = function (gifElements) {
 
     const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
     if (posterElement) {
-      posterElement.setAttribute(posterAttribute, '');
+      posterElement.setAttribute(posterAttribute, loadingMode);
     } else {
       const sourceUrl = gifElement.currentSrc ||
         await new Promise(resolve => gifElement.addEventListener('load', () => resolve(gifElement.currentSrc), { once: true }));
@@ -183,7 +189,7 @@ const processTumblrTvCards = cards =>
 const processRows = function (rowsElements) {
   rowsElements.forEach(rowsElement => {
     [...rowsElement.children].forEach(row => {
-      if (!row.querySelector('figure')) return;
+      if (!row.querySelector(`figure:not(${keyToCss('unstretched')})`)) return;
 
       if (row.previousElementSibling?.classList?.contains(containerClass)) {
         row.previousElementSibling.append(row);
@@ -199,7 +205,18 @@ const processRows = function (rowsElements) {
 const processHoverableElements = elements =>
   elements.forEach(element => element.setAttribute(hoverContainerAttribute, ''));
 
+const onStorageChanged = async function (changes, areaName) {
+  if (areaName !== 'local') return;
+
+  const { 'accesskit.preferences.disable_gifs_loading_mode': modeChanges } = changes;
+  if (modeChanges?.oldValue === undefined) return;
+
+  loadingMode = modeChanges.newValue;
+};
+
 export const main = async function () {
+  ({ disable_gifs_loading_mode: loadingMode } = await getPreferences('accesskit'));
+
   const gifImage = `
     :is(
       figure, /* post image/imageset; recommended blog carousel entry; blog view sidebar "more like this"; post in grid view; blog card modal post entry */
@@ -255,9 +272,13 @@ export const main = async function () {
     `:is(${postSelector}, ${keyToCss('blockEditorContainer')}) ${keyToCss('rows')}`,
     processRows
   );
+
+  browser.storage.onChanged.addListener(onStorageChanged);
 };
 
 export const clean = async function () {
+  browser.storage.onChanged.removeListener(onStorageChanged);
+
   pageModifications.unregister(processGifs);
   pageModifications.unregister(processBackgroundGifs);
   pageModifications.unregister(processTumblrTvCards);
