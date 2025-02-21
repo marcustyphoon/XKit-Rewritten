@@ -5,20 +5,21 @@ import { buildStyle, postSelector } from '../../utils/interface.js';
 import { memoize } from '../../utils/memoize.js';
 import { getPreferences } from '../../utils/preferences.js';
 
+const labelAttribute = 'data-paused-gif-label';
 const posterAttribute = 'data-paused-gif-placeholder';
 const pausedContentVar = '--xkit-paused-gif-content';
 const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 const hoverContainerAttribute = 'data-paused-gif-hover-container';
 const hoverFixAttribute = 'data-paused-gif-hover-fix';
-const labelClass = 'xkit-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
 
 let loadingMode;
 
 const hovered = `:is(:hover > *, [${hoverContainerAttribute}]:hover *)`;
+const labelHovered = `:is(:hover, [${hoverContainerAttribute}]:hover *)`;
 
 export const styleElement = buildStyle(`
-.${labelClass} {
+[${labelAttribute}]::after {
   position: absolute;
   top: 1ch;
   right: 1ch;
@@ -27,28 +28,26 @@ export const styleElement = buildStyle(`
   padding: 0.6ch;
   border-radius: 3px;
 
+  content: "GIF";
   background-color: rgb(var(--black));
   color: rgb(var(--white));
   font-size: 1rem;
   font-weight: bold;
   line-height: 1em;
 }
-.${labelClass}::before {
-  content: "GIF";
-}
-.${labelClass}.mini {
+[${labelAttribute}="mini"]::after {
   font-size: 0.6rem;
 }
-${keyToCss('blogCard')} ${keyToCss('headerImage')}${keyToCss('small')} .${labelClass} {
+${keyToCss('blogCard')} ${keyToCss('headerImage')}${keyToCss('small')}[${labelAttribute}]::after {
   font-size: 0.8rem;
   top: calc(140px - 1em - 2.2ch);
 }
 
-.${labelClass}${hovered},
-img:is([${posterAttribute}], [style*="${pausedContentVar}"]):not(${hovered}) ~ div > ${keyToCss('knightRiderLoader')} {
+[${labelAttribute}]${labelHovered}::after,
+[${labelAttribute}]:not(${labelHovered}) > div > ${keyToCss('knightRiderLoader')} {
   display: none;
 }
-${keyToCss('background')} > .${labelClass} {
+${keyToCss('background')}[${labelAttribute}]::after {
   /* prevent double labels in recommended post cards */
   display: none;
 }
@@ -78,16 +77,10 @@ img[style*="${pausedContentVar}"]:not(${hovered}) {
 
 const addLabel = (element, inside = false) => {
   const target = inside ? element : element.parentElement;
-  if (target) {
-    [...target.querySelectorAll(`.${labelClass}`)].forEach(existingLabel => existingLabel.remove());
-
-    const gifLabel = document.createElement('p');
-    gifLabel.className = target.clientWidth && target.clientWidth <= 150
-      ? `${labelClass} mini`
-      : labelClass;
-
-    target.append(gifLabel);
-  }
+  target?.setAttribute(
+    labelAttribute,
+    target.clientWidth && target.clientWidth <= 150 ? 'mini' : ''
+  );
 };
 
 const createPausedUrl = memoize(async sourceUrl => {
@@ -289,7 +282,7 @@ export const clean = async function () {
     wrapper.replaceWith(...wrapper.children)
   );
 
-  $(`.${labelClass}`).remove();
+  $(`[${labelAttribute}]`).removeAttr(labelAttribute);
   $(`[${posterAttribute}]`).removeAttr(posterAttribute);
   $(`[${hoverContainerAttribute}]`).removeAttr(hoverContainerAttribute);
   $(`[${hoverFixAttribute}]`).removeAttr(hoverFixAttribute);
