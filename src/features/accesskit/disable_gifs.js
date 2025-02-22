@@ -38,6 +38,14 @@ export const styleElement = buildStyle(`
   font-size: 0.6rem;
 }
 
+
+[${pausedPosterAttribute}] > .${labelClass} {
+  z-index: 1;
+}
+[${pausedPosterAttribute}] {
+  isolation: isolate;
+}
+
 .${canvasClass} {
   position: absolute;
   visibility: visible;
@@ -117,7 +125,7 @@ const processGifs = function (gifElements) {
     const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
     if (posterElement) {
       gifElement.parentElement.setAttribute(pausedPosterAttribute, '');
-      addLabel(gifElement);
+      addLabel(posterElement);
       return;
     }
 
