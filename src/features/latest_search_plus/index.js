@@ -6,16 +6,32 @@ import { pageModifications } from '../../utils/mutations.js';
 import { addSidebarItem, removeSidebarItem } from '../../utils/sidebar.js';
 import { navigate } from '../../utils/tumblr_helpers.js';
 
-const activeClass = 'xkit-latest-search-plus-active';
+const activeAttr = 'data-latest-search-plus';
 
 export const styleElement = buildStyle(`
-.${activeClass} {
+[${activeAttr}] {
   display: flex;
   flex-direction: column;
 }
 
-.${activeClass} > div {
+[${activeAttr}] > div {
   position: unset !important;
+}
+
+[${activeAttr}]::before {
+  order: ${Number.MIN_SAFE_INTEGER};
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+
+  content: 'Latest ' attr(${activeAttr}) ' days of posts in chronological order:';
+  background-color: var(--chrome-panel);
+  color: var(--chrome-fg);
+  font-size: 1.125rem;
+}
+
+[${activeAttr}="1"]::before {
+  content: 'Latest ' attr(${activeAttr}) ' day of posts in chronological order:';
 }
 `);
 
@@ -44,7 +60,7 @@ const performSearch = async duration => {
   await scrollToBottomOnce();
 
   const scrollContainer = document.querySelector(scrollContainerSelector);
-  scrollContainer.classList.add(activeClass);
+  scrollContainer.setAttribute(activeAttr, duration);
 
   const postElements = [...scrollContainer.querySelectorAll('[data-cell-id*="post-"]')];
   const arr = postElements.map(el => el.dataset.cellId.replace(/.*post-/, '')).toSorted();
@@ -132,7 +148,7 @@ const sidebarOptions = {
 };
 
 const stopBuggyScroll = event => {
-  if (['KeyJ', 'KeyK'].includes(event.code) && document.querySelector(`.${activeClass}`)) {
+  if (['KeyJ', 'KeyK'].includes(event.code) && document.querySelector(`[${activeAttr}]`)) {
     event.stopPropagation();
   }
 };
@@ -146,5 +162,5 @@ export const clean = async function () {
   removeSidebarItem(sidebarOptions.id);
   document.body.removeEventListener('keydown', stopBuggyScroll);
 
-  $(`.${activeClass}`).removeClass(activeClass);
+  $(`[${activeAttr}]`).removeAttr(activeAttr);
 };
