@@ -49,7 +49,7 @@ const performSearch = async duration => {
   const postElements = [...scrollContainer.querySelectorAll('[data-cell-id*="post-"]')];
   const arr = postElements.map(el => el.dataset.cellId.replace(/.*post-/, '')).toSorted();
   postElements.forEach(el => {
-    el.style.order = 0 - arr.indexOf(el.dataset.cellId.replace(/.*post-/, ''));
+    el.style.order = -1 - arr.indexOf(el.dataset.cellId.replace(/.*post-/, ''));
   });
 
   window.scrollTo({ top: 0 });
