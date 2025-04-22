@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XKit: Manage Panorama</title>
+    <link rel="icon" href="/icons/128.png" type="image/png">
+    <link rel="stylesheet" href="/lib/normalize.min.css">
+    <link rel="stylesheet" href="index.css">
+    <script src="/action/resize_frames.js" defer></script>
+    <script src="/lib/browser-polyfill.min.js" defer></script>
+    <script src="index.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <ul>
+        <li>
+          <label for="text-input">Max. post width</label>
+          <input type="text" id="text-input" spellcheck="false">
+        </li>
+        <li>
+          <div class="range-container">
+            <input type="range" id="range-input" name="Max. post width" min="540" max="1280" step="20" list="values" />
+            <datalist id="values">
+              <option value="540"></option>
+              <option value="640"></option>
+              <option value="800"></option>
+              <option value="1280"></option>
+            </datalist>
+            <div class="range-labels">
+              <div>540px</div>
+              <div>1280px</div>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

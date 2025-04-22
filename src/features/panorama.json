@@ -23,10 +23,10 @@
       "type": "checkbox",
       "default": true
     },
-    "maxPostWidth": {
+    "manageMaxPostWidth": {
+      "type": "iframe",
       "label": "Max. post width",
-      "type": "text",
-      "default": "800px"
+      "src": "/features/panorama/options/index.html"
     },
     "expandPostMedia": {
       "label": "Expand media content in wide posts",

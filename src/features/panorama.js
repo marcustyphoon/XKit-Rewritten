@@ -3,6 +3,8 @@ import { buildStyle, postSelector } from '../utils/interface.js';
 import { pageModifications } from '../utils/mutations.js';
 import { getPreferences } from '../utils/preferences.js';
 
+const maxPostWidthStorageKey = 'panorama.maxPostWidth';
+
 const widenDashMinWidth = 1162;
 
 const sidebarMaxWidth = 320;
@@ -130,12 +132,15 @@ export const onStorageChanged = async (changes, areaName) =>
 
 export const main = async () => {
   const {
-    maxPostWidth: maxPostWidthString,
     expandPostMedia,
     mainEnable,
     communitiesEnable,
     patioEnable
   } = await getPreferences('panorama');
+
+  const {
+    [maxPostWidthStorageKey]: maxPostWidthString = '800px'
+  } = await browser.storage.local.get(maxPostWidthStorageKey);
 
   const maxPostWidth = Number(maxPostWidthString.trim().replace('px', '')) || 0;
   document.documentElement.style.setProperty(maxPostWidthVar, `${Math.max(maxPostWidth, 540)}px`);
