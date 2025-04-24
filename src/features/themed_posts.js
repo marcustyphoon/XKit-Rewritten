@@ -2,14 +2,14 @@ import { buildStyle, filterPostElements, blogViewSelector, postSelector } from '
 import { getPreferences } from '../utils/preferences.js';
 import { onNewPosts } from '../utils/mutations.js';
 import { timelineObject } from '../utils/react_props.js';
-import { keyToCss } from '../utils/css_map.js';
+import { propsToCss } from '../utils/css_map.js';
+import { timelineSelector } from '../utils/timeline_id.js';
 
 export const styleElement = buildStyle();
 
 const blogs = new Set();
 const groupsFromHex = /^#(?<red>[A-Fa-f0-9]{1,2})(?<green>[A-Fa-f0-9]{1,2})(?<blue>[A-Fa-f0-9]{1,2})$/;
-const reblogSelector = keyToCss('reblog');
-const timelineSelector = keyToCss('timeline');
+const reblogSelector = propsToCss('isContributedContent');
 
 let enableOnPeepr;
 let blacklistedUsernames;

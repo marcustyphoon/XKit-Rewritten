@@ -1,4 +1,5 @@
 import { keyToCss } from './css_map.js';
+import { inject } from './inject.js';
 import { notificationSelector, postSelector } from './interface.js';
 const rootNode = document.getElementById('root');
 const headNode = document.querySelector('head');
@@ -65,8 +66,10 @@ export const onNewNotifications = Object.freeze({
   removeListener: callback => pageModifications.unregister(callback)
 });
 
-const onBeforeRepaint = () => {
+const onBeforeRepaint = async () => {
   repaintQueued = false;
+
+  await inject('/main_world/set_react_props_attributes.js');
 
   const addedNodes = addedNodesPool
     .splice(0)
@@ -77,7 +80,13 @@ const onBeforeRepaint = () => {
   for (const [modifierFunction, selector] of pageModifications.listeners) {
     if (modifierFunction.length === 0) {
       const shouldRun = addedNodes.some(addedNode => addedNode.matches(selector) || addedNode.querySelector(selector) !== null);
-      if (shouldRun) modifierFunction();
+      if (shouldRun) {
+        try {
+          modifierFunction();
+        } catch (e) {
+          console.error(e);
+        }
+      }
       continue;
     }
 
@@ -87,7 +96,11 @@ const onBeforeRepaint = () => {
     ].filter((value, index, array) => index === array.indexOf(value));
 
     if (matchingElements.length !== 0) {
-      modifierFunction(matchingElements);
+      try {
+        modifierFunction(matchingElements);
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 };

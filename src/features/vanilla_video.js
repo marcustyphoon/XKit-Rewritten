@@ -1,6 +1,6 @@
 import { getPreferences } from '../utils/preferences.js';
 import { pageModifications } from '../utils/mutations.js';
-import { keyToCss } from '../utils/css_map.js';
+import { propsToCss } from '../utils/css_map.js';
 
 const vanillaVideoClass = 'xkit-vanilla-video-player';
 
@@ -43,7 +43,7 @@ export const onStorageChanged = async function (changes, areaName) {
 
 export const main = async function () {
   ({ defaultVolume } = await getPreferences('vanilla_video'));
-  pageModifications.register(`${keyToCss('videoPlayer')} video:not(.${vanillaVideoClass})`, cloneVideoElements);
+  pageModifications.register(`${propsToCss('block')} > [role="application"] video:not(.${vanillaVideoClass})`, cloneVideoElements);
 };
 
 export const clean = async function () {

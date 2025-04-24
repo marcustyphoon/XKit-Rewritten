@@ -13,6 +13,17 @@ export const keyToClasses = (...keys) => keys.flatMap(key => cssMap[key]).filter
  * @returns {string} - A CSS :is() selector which targets all elements that match any of the given source names
  */
 export const keyToCss = function (...keys) {
-  const classes = keyToClasses(...keys);
-  return `:is(${classes.map(className => `.${className}`).join(', ')})`;
+  return `:is(${keys.map(key => `.fixme-${key}`).join(', ')})`;
+
+  // const classes = keyToClasses(...keys);
+  // return `:is(${classes.map(className => `.${className}`).join(', ')})`;
 };
+
+export const propsToCss = (...values) =>
+  `:is(${values
+    .map(value =>
+      value.includes(':')
+        ? `[data-xkit-props*="/${value}/"]`
+        : `[data-xkit-props*="/${value}:"]`
+    )
+    .join(', ')})`;

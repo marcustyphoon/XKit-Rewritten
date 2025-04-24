@@ -2,7 +2,7 @@ import { buildStyle, getTimelineItemWrapper, filterPostElements, getPopoverWrapp
 import { blogData, notificationObject, timelineObject } from '../utils/react_props.js';
 import { apiFetch } from '../utils/tumblr_helpers.js';
 import { primaryBlogName } from '../utils/user.js';
-import { keyToCss } from '../utils/css_map.js';
+import { propsToCss } from '../utils/css_map.js';
 import { onNewPosts, onNewNotifications, pageModifications } from '../utils/mutations.js';
 import { dom } from '../utils/dom.js';
 import { getPreferences } from '../utils/preferences.js';
@@ -40,11 +40,11 @@ const styleElement = buildStyle(`
     height: 0;
   }
 
-  ${keyToCss('blogCardBlogLink')} {
+  ${propsToCss('isBlogCardHeader:true')} > div:has(> svg.xkit-mutual-icon) {
     display: flex;
   }
 
-  ${keyToCss('blogCardBlogLink')} svg.xkit-mutual-icon {
+  ${propsToCss('isBlogCardHeader:true')} > div > svg.xkit-mutual-icon {
     position: relative;
     top: 3px;
 
@@ -95,7 +95,7 @@ const addIcons = function (postElements) {
 
 const addBlogCardIcons = blogCardLinks =>
   blogCardLinks.forEach(async blogCardLink => {
-    const blogName = blogCardLink.querySelector(keyToCss('blogLinkShort'))?.textContent || blogCardLink?.textContent;
+    const blogName = blogCardLink.querySelector('div')?.textContent || blogCardLink?.textContent;
     if (!blogName) return;
 
     const followingBlog = await getIsFollowing(blogName, blogCardLink);
@@ -141,7 +141,7 @@ export const main = async function () {
   following[primaryBlogName] = Promise.resolve(false);
 
   onNewPosts.addListener(addIcons);
-  pageModifications.register(`${keyToCss('blogCard')} ${keyToCss('blogCardBlogLink')} > a`, addBlogCardIcons);
+  pageModifications.register(`header > ${propsToCss('isBlogCardHeader:true')} a`, addBlogCardIcons);
 
   if (showOnlyMutualNotifications) {
     document.documentElement.append(onlyMutualsStyleElement);

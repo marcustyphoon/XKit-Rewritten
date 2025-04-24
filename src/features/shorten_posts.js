@@ -1,13 +1,13 @@
 import { buildStyle, filterPostElements, postSelector } from '../utils/interface.js';
 import { onNewPosts } from '../utils/mutations.js';
 import { getPreferences } from '../utils/preferences.js';
-import { keyToCss } from '../utils/css_map.js';
+import { propsToCss } from '../utils/css_map.js';
 import { dom } from '../utils/dom.js';
 
 let showTags;
 let maxHeight;
 
-const tagsSelector = keyToCss('tags');
+const tagsSelector = `div${propsToCss('tags')}:has(+ footer)`;
 
 const excludeClass = 'xkit-shorten-posts-done';
 const noBlogView = true;

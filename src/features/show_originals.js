@@ -2,7 +2,7 @@ import { filterPostElements, getTimelineItemWrapper } from '../utils/interface.j
 import { isMyPost, timelineObject } from '../utils/react_props.js';
 import { getPreferences } from '../utils/preferences.js';
 import { onNewPosts } from '../utils/mutations.js';
-import { keyToCss } from '../utils/css_map.js';
+import { propsToCss } from '../utils/css_map.js';
 import { translate } from '../utils/language_data.js';
 import { userBlogs } from '../utils/user.js';
 import {
@@ -19,7 +19,7 @@ const hiddenAttribute = 'data-show-originals-hidden';
 const lengthenedClass = 'xkit-show-originals-lengthened';
 const controlsClass = 'xkit-show-originals-controls';
 
-const channelSelector = `${keyToCss('bar')} ~ *`;
+const channelSelector = `div${propsToCss('selectedBlogName')} ~ *`;
 
 const storageKey = 'show_originals.savedModes';
 const includeFiltered = true;
@@ -31,7 +31,7 @@ let whitelist;
 let disabledBlogs;
 
 const lengthenTimeline = async (timeline) => {
-  if (!timeline.querySelector(keyToCss('manualPaginatorButtons'))) {
+  if (!timeline.querySelector(`${propsToCss('onClickNext')}${propsToCss('onClickPrevious')}`)) {
     timeline.classList.add(lengthenedClass);
   }
 };
