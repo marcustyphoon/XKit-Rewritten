@@ -1,4 +1,4 @@
-import { createControlButtonTemplate, cloneControlButton } from '../../utils/control_buttons.js';
+import { createControlButtonTemplate, cloneControlButton, insertControlButton } from '../../utils/control_buttons.js';
 import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { filterPostElements, postSelector } from '../../utils/interface.js';
@@ -164,23 +164,14 @@ const onButtonClicked = async function ({ currentTarget: controlButton }) {
 
 const processPosts = postElements =>
   filterPostElements(postElements).forEach(async postElement => {
-    const existingButton = postElement.querySelector(`.${buttonClass}`);
-    if (existingButton !== null) {
-      return;
-    }
+    const { state, canEdit } = await timelineObject(postElement);
 
-    const editButton = postElement.querySelector(
-      `footer ${controlIconSelector} a[href*="/edit/"]`
-    );
-    if (!editButton) {
-      return;
+    if (canEdit && ['ask', 'submission'].includes(state) === false) {
+      const clonedControlButton = cloneControlButton(controlButtonTemplate, {
+        click: event => onButtonClicked(event).catch(showErrorModal)
+      });
+      insertControlButton(postElement, clonedControlButton, buttonClass);
     }
-
-    const clonedControlButton = cloneControlButton(controlButtonTemplate, {
-      click: event => onButtonClicked(event).catch(showErrorModal)
-    });
-    const controlIcon = editButton.closest(controlIconSelector);
-    controlIcon.before(clonedControlButton);
   });
 
 export const main = async function () {
