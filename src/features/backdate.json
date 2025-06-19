@@ -1,0 +1,9 @@
+{
+  "title": "Backdate",
+  "description": "Edit post dates",
+  "icon": {
+    "class_name": "ri-calendar-view",
+    "color": "white",
+    "background_color": "#000000"
+  }
+}
