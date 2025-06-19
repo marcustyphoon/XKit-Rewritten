@@ -1,5 +1,4 @@
 import { createControlButtonTemplate, cloneControlButton, insertControlButton } from '../../utils/control_buttons.js';
-import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { filterPostElements, postSelector } from '../../utils/interface.js';
 import { showModal, hideModal, modalCancelButton, showErrorModal } from '../../utils/modals.js';
@@ -27,8 +26,6 @@ const debounce = (func, ms) => {
 
 const symbolId = 'ri-braces-line';
 const buttonClass = 'xkit-json-editor-button';
-
-const controlIconSelector = keyToCss('controlIcon');
 
 let controlButtonTemplate;
 
