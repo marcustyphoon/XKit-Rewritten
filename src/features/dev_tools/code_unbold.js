@@ -1,8 +1,8 @@
 import {
   createControlButtonTemplate,
-  cloneControlButton
+  cloneControlButton,
+  insertControlButton
 } from '../../utils/control_buttons.js';
-import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { filterPostElements, postSelector } from '../../utils/interface.js';
 import { showModal, modalCancelButton, showErrorModal } from '../../utils/modals.js';
@@ -13,8 +13,6 @@ import { apiFetch, createEditRequestBody } from '../../utils/tumblr_helpers.js';
 
 const symbolId = 'ri-text-block';
 const buttonClass = 'xkit-code-unbold-button';
-
-const controlIconSelector = keyToCss('controlIcon');
 
 let controlButtonTemplate;
 
@@ -71,27 +69,14 @@ const onButtonClicked = async function ({ currentTarget: controlButton }) {
 
 const processPosts = postElements =>
   filterPostElements(postElements).forEach(async postElement => {
-    const existingButton = postElement.querySelector(`.${buttonClass}`);
-    if (existingButton !== null) {
-      return;
+    const { state, canEdit } = await timelineObject(postElement);
+
+    if (canEdit && ['ask', 'submission'].includes(state) === false) {
+      const clonedControlButton = cloneControlButton(controlButtonTemplate, {
+        click: event => onButtonClicked(event).catch(showErrorModal)
+      });
+      insertControlButton(postElement, clonedControlButton, buttonClass);
     }
-
-    const editButton = postElement.querySelector(
-      `footer ${controlIconSelector} a[href*="/edit/"]`
-    );
-    if (!editButton) {
-      return;
-    }
-
-    const { content } = await timelineObject(postElement);
-
-    if (!content.some(block => block.subtype === 'chat' && block.formatting)) return;
-
-    const clonedControlButton = cloneControlButton(controlButtonTemplate, {
-      click: event => onButtonClicked(event).catch(showErrorModal)
-    });
-    const controlIcon = editButton.closest(controlIconSelector);
-    controlIcon.before(clonedControlButton);
   });
 
 export const main = async function () {
