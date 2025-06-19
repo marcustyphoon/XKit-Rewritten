@@ -2,6 +2,7 @@ import { keyToClasses, keyToCss } from '../utils/css_map.js';
 import { translate } from '../utils/language_data.js';
 import { pageModifications } from '../utils/mutations.js';
 import { buildStyle } from '../utils/interface.js';
+import { inject } from '../utils/inject.js';
 
 const scrollToBottomButtonId = 'xkit-scroll-to-bottom-button';
 $(`[id="${scrollToBottomButtonId}"]`).remove();
@@ -23,6 +24,7 @@ export const styleElement = buildStyle(`
 `);
 
 let timeoutID;
+let loadCounter = 0;
 
 const onLoadersAdded = loaders => {
   if (active) {
@@ -32,11 +34,21 @@ const onLoadersAdded = loaders => {
 
 const scrollToBottom = () => {
   clearTimeout(timeoutID);
-  window.scrollTo({ top: document.documentElement.scrollHeight });
+
+  const loader = document.querySelector(loaderSelector);
+  if (loader) {
+    inject('/main_world/trigger_scroll.js', [], loader);
+    if (loadCounter++ % 10 === 0) {
+      window.scrollBy({ top: loader.getBoundingClientRect().top - window.innerHeight });
+    }
+  } else {
+    window.scrollTo({ top: document.documentElement.scrollHeight });
+  }
 
   timeoutID = setTimeout(() => {
     if (!document.querySelector(knightRiderLoaderSelector)) {
       stopScrolling();
+      window.scrollTo({ top: document.documentElement.scrollHeight });
     }
   }, 500);
 };
@@ -45,6 +57,7 @@ const observer = new ResizeObserver(scrollToBottom);
 const startScrolling = () => {
   observer.observe(document.documentElement);
   active = true;
+  loadCounter = 0;
   scrollToBottomButton.classList.add(activeClass);
   scrollToBottom();
 };
