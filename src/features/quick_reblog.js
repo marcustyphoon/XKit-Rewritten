@@ -337,17 +337,27 @@ export const main = async function () {
     alreadyRebloggedLimit
   } = await getPreferences('quick_reblog'));
 
-  blogSelector.replaceChildren(
-    ...userBlogs.map(({ name, uuid }) => dom('option', { value: uuid }, null, [name])),
-    ...joinedCommunities.length ? [dom('hr')] : [],
-    ...joinedCommunities.map(({ title, uuid, blog: { name } }) => dom('option', { value: uuid }, null, [`${title} (${name})`]))
-  );
-
   [...userBlogs, ...joinedCommunities].forEach((data) => {
     const avatar = data.avatarImage ?? data.avatar;
     const { url } = avatar.at(-1);
     avatarUrls.set(data.uuid, url);
   });
+
+  blogSelector.replaceChildren(
+    ...userBlogs.map(({ name, uuid }) =>
+      dom('option', { value: uuid }, null, [
+        dom('img', { class: 'avatar', src: avatarUrls.get(uuid) }),
+        name
+      ])
+    ),
+    ...(joinedCommunities.length ? [dom('hr')] : []),
+    ...joinedCommunities.map(({ title, uuid, blog: { name } }) =>
+      dom('option', { value: uuid }, null, [
+        dom('img', { class: 'avatar', src: avatarUrls.get(uuid) }),
+        `${title} (${name})`
+      ])
+    )
+  );
 
   if (rememberLastBlog) {
     for (const { uuid } of [...userBlogs, ...joinedCommunities]) {
