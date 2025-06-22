@@ -85,6 +85,11 @@ div:first-child + span + #quick-reblog,
   border-radius: 2px;
 }
 
+#quick-reblog select,
+#quick-reblog ::picker(select) {
+  appearance: base-select;
+}
+
 #quick-reblog .quick-tags {
   font-size: .875rem;
   line-height: 1.125;
