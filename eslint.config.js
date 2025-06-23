@@ -1,6 +1,7 @@
 import jsdoc from 'eslint-plugin-jsdoc';
 import neostandard from 'neostandard';
 import pluginESx from 'eslint-plugin-es-x';
+import topLevel from 'eslint-plugin-toplevel';
 
 export default [
   /**
@@ -28,6 +29,8 @@ export default [
   { rules: { 'import-x/no-cycle': 'error' } },
 
   { plugins: { 'es-x': pluginESx }, rules: { 'es-x/no-top-level-await': 'error', } },
+
+  { files: ['src/features/**', 'src/utils/**'], plugins: { 'top-level': topLevel }, rules: { 'top-level/no-toplevel-side-effect': 'error', } },
 
   /**
    * Import eslint-plugin-jsdoc and use its recommended config.
