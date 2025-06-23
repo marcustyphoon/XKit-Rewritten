@@ -121,11 +121,11 @@
       initMainWorld()
     ]);
 
-    /**
-     * fixes WebKit (Chromium, Safari) simultaneous import failure of files with unresolved top level await
-     * @see https://github.com/sveltejs/kit/issues/7805#issuecomment-1330078207
-     */
-    await Promise.all(['css_map', 'language_data', 'user'].map(name => import(browser.runtime.getURL(`/utils/${name}.js`))));
+    await Promise.all(
+      ['css_map', 'language_data', 'get_user_info'].map(name =>
+        import(browser.runtime.getURL(`/utils/${name}.js`)).then(({ init }) => init())
+      )
+    );
 
     installedScripts
       .filter(scriptName => enabledScripts.includes(scriptName))
