@@ -1,6 +1,10 @@
 import { inject } from './inject.js';
 
-export const cssMap = await inject('/main_world/css_map.js');
+export let cssMap;
+
+export const init = async () => {
+  cssMap = await inject('/main_world/css_map.js');
+};
 
 /**
  * @param {...string} keys - One or more element source names

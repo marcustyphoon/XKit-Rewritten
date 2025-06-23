@@ -1,6 +1,10 @@
 import { inject } from './inject.js';
 
-export const languageData = await inject('/main_world/language_data.js');
+export let languageData;
+
+export const init = async () => {
+  languageData = await inject('/main_world/language_data.js');
+};
 
 /**
  * @param {string} rootString - The English string to translate

@@ -1,5 +1,6 @@
 import jsdoc from 'eslint-plugin-jsdoc';
 import neostandard from 'neostandard';
+import pluginESx from 'eslint-plugin-es-x';
 
 export default [
   /**
@@ -25,6 +26,8 @@ export default [
    * @see https://github.com/un-ts/eslint-plugin-import-x/blob/master/docs/rules/no-cycle.md
    */
   { rules: { 'import-x/no-cycle': 'error' } },
+
+  { plugins: { 'es-x': pluginESx }, rules: { 'es-x/no-top-level-await': 'error', } },
 
   /**
    * Import eslint-plugin-jsdoc and use its recommended config.
