@@ -1,0 +1,10 @@
+# use real module exports in all scripts and utils
+a682fddd8ac2831e7eaa2ceef11463ee9a0d8473
+
+# upgrade directory structure
+# https://github.com/AprilSylph/XKit-Rewritten/pull/1507
+e87cdf8bb0978e3d3b5a4254659c465e59e8dac4
+
+# chore: restructure `src/features/` directory
+# https://github.com/AprilSylph/XKit-Rewritten/pull/1820
+a9be038361675088c9c75dd6bd348cfe256fc7f5
