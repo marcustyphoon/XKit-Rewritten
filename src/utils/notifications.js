@@ -1,7 +1,8 @@
 import { keyToCss } from './css_map.js';
+import { customElements } from './custom_elements.js';
 import { dom } from './dom.js';
 
-const toastContainer = dom('div', { id: 'xkit-toasts' });
+const toastContainer = dom(customElements.xkitToasts);
 
 const drawerContentSelector = keyToCss('drawerContent');
 const sidebarSelector = keyToCss('sidebar');

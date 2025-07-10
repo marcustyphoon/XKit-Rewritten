@@ -1,7 +1,8 @@
+import { customElements } from './custom_elements.js';
 import { dom } from './dom.js';
 
 // Remove any outdated modal when loading module
-document.getElementById('xkit-modal')?.remove();
+document.querySelector(customElements.modal)?.remove();
 
 let lastFocusedElement;
 
@@ -13,8 +14,7 @@ let lastFocusedElement;
  * @param {(HTMLElement)[]} [options.buttons] - Array of buttons to be displayed in the modal
  */
 export const showModal = ({ title, message = [], buttons = [] }) => {
-  const modalElement = dom('div', {
-    id: 'xkit-modal',
+  const modalElement = dom(customElements.modal, {
     tabindex: '-1',
     role: 'dialog',
     'aria-modal': 'true',
@@ -36,7 +36,7 @@ export const showModal = ({ title, message = [], buttons = [] }) => {
 };
 
 export const hideModal = () => {
-  document.getElementById('xkit-modal')?.remove();
+  document.querySelector(customElements.modal)?.remove();
   lastFocusedElement?.focus();
   lastFocusedElement = null;
 };

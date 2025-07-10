@@ -1,4 +1,4 @@
-#xkit-modal {
+xkit-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -16,21 +16,21 @@
   text-align: center;
 }
 
-#xkit-modal > * {
+xkit-modal > * {
   box-sizing: border-box;
   max-width: 540px;
   padding-left: 32px;
   padding-right: 32px;
 }
 
-#xkit-modal .title {
+xkit-modal .title {
   font-family: var(--font-family);
   font-size: 1.625rem;
   font-weight: bolder;
   line-height: 1.3077;
 }
 
-#xkit-modal .message {
+xkit-modal .message {
   padding-top: 20px;
   padding-bottom: 10px;
 
@@ -41,11 +41,11 @@
   white-space: pre-line;
 }
 
-#xkit-modal .message small {
+xkit-modal .message small {
   font-size: 80%;
 }
 
-#xkit-modal .message :is(ol, ul) {
+xkit-modal .message :is(ol, ul) {
   display: block;
   box-sizing: border-box;
   width: max-content;
@@ -56,7 +56,7 @@
   text-align: left;
 }
 
-#xkit-modal .message :is(form, table) {
+xkit-modal .message :is(form, table) {
   box-sizing: border-box;
   width: 476px;
   border-radius: 8px;
@@ -67,14 +67,14 @@
   line-height: 1.5;
 }
 
-#xkit-modal .message form {
+xkit-modal .message form {
   display: flex;
   flex-direction: column;
   gap: 1em;
   padding: 1em;
 }
 
-#xkit-modal .message form label {
+xkit-modal .message form label {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -84,28 +84,28 @@
   text-align: left;
 }
 
-#xkit-modal .message form :is(input[type="text"], select) {
+xkit-modal .message form :is(input[type="text"], select) {
   box-sizing: border-box;
   width: 220px;
 
   font-size: .875rem;
 }
 
-#xkit-modal .message table {
+xkit-modal .message table {
   border-collapse: separate;
   border-spacing: 1ch;
   text-align: left;
 }
 
-#xkit-modal .message table th {
+xkit-modal .message table th {
   font-weight: bold;
 }
 
-#xkit-modal .message table td[title] {
+xkit-modal .message table td[title] {
   cursor: help;
 }
 
-#xkit-modal .buttons {
+xkit-modal .buttons {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -114,7 +114,7 @@
   margin-top: 15px;
 }
 
-#xkit-modal .buttons :is(a, button, input) {
+xkit-modal .buttons :is(a, button, input) {
   padding: 0.75ch 1.5ch;
   border: none;
   border-radius: 3px;
@@ -130,15 +130,15 @@
   text-decoration: none;
 }
 
-#xkit-modal .buttons :disabled {
+xkit-modal .buttons :disabled {
   cursor: not-allowed;
   filter: grayscale(100%);
 }
 
-#xkit-modal .buttons :is(a, button, input).red {
+xkit-modal .buttons :is(a, button, input).red {
   background-color: rgb(var(--red));
 }
 
-#xkit-modal .buttons :is(a, button, input).blue {
+xkit-modal .buttons :is(a, button, input).blue {
   background-color: rgb(var(--blue));
 }

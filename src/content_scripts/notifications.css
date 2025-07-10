@@ -1,4 +1,4 @@
-#xkit-toasts {
+xkit-toasts {
   position: fixed;
   bottom: 0;
   z-index: 99;
@@ -6,11 +6,11 @@
   width: 100%;
 }
 
-#xkit-toasts:empty {
+xkit-toasts:empty {
   display: none;
 }
 
-#xkit-toasts div {
+xkit-toasts div {
   padding: 10px;
   border-top: 1px solid rgba(var(--white-on-dark), .13);
 
@@ -25,25 +25,25 @@
   transition: opacity 1s;
 }
 
-#xkit-toasts div.visible {
+xkit-toasts div.visible {
   opacity: 1;
 }
 
-#xkit-toasts[data-in-sidebar="true"] {
+xkit-toasts[data-in-sidebar="true"] {
   width: 320px;
   margin-bottom: 1ch;
 }
 
-#xkit-toasts[data-in-sidebar="true"] div {
+xkit-toasts[data-in-sidebar="true"] div {
   border-top: none;
 
   text-align: left;
 }
 
-#xkit-toasts[data-in-sidebar="true"] div:not(:last-child) {
+xkit-toasts[data-in-sidebar="true"] div:not(:last-child) {
   border-bottom: 1px solid rgba(var(--white-on-dark), .13);
 }
 
-[role="dialog"] #xkit-toasts[data-in-sidebar="false"] {
+[role="dialog"] xkit-toasts[data-in-sidebar="false"] {
   position: absolute;
 }

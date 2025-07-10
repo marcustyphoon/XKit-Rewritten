@@ -1,5 +1,6 @@
 import { createControlButtonTemplate, cloneControlButton, insertControlButton } from '../../utils/control_buttons.js';
 import { keyToCss } from '../../utils/css_map.js';
+import { customElements } from '../../utils/custom_elements.js';
 import { dom } from '../../utils/dom.js';
 import { filterPostElements, postSelector } from '../../utils/interface.js';
 import { showModal, hideModal, modalCancelButton, showErrorModal } from '../../utils/modals.js';
@@ -123,7 +124,7 @@ const onButtonClicked = async function ({ currentTarget: controlButton }) {
       });
       notify(displayText);
 
-      controlButton.closest('.xkit-control-button-container').remove();
+      controlButton.closest(customElements.controlButtonContainer).remove();
 
       const reblogs = [...postElement.querySelectorAll(reblogSelector)];
       excludeTrailItems
