@@ -1,12 +1,11 @@
 import { keyToCss } from './css_map.js';
-import { customElements } from './custom_elements.js';
 import { dom } from './dom.js';
 import { blogViewSelector } from './interface.js';
 import { pageModifications } from './mutations.js';
 
-$(customElements.xkitSidebar).remove();
+$('xkit-sidebar').remove();
 
-const sidebarItems = dom(customElements.xkitSidebar);
+const sidebarItems = dom('xkit-sidebar');
 const conditions = new Map();
 
 const carrotSvg = dom('svg', {

@@ -1,11 +1,10 @@
 import { keyToCss } from './css_map.js';
-import { customElements } from './custom_elements.js';
 import { dom } from './dom.js';
 import { timelineObject } from './react_props.js';
 import { buildSvg } from './remixicon.js';
 
 // Remove outdated buttons when loading module
-$(customElements.controlButtonContainer).remove();
+$('xkit-control-button-container').remove();
 
 /**
  * Create a button template that can be cloned with cloneControlButton() for inserting into the controls of a post.
@@ -15,7 +14,7 @@ $(customElements.controlButtonContainer).remove();
  * @returns {HTMLDivElement} A button that can be cloned with cloneControlButton()
  */
 export const createControlButtonTemplate = function (symbolId, buttonClass, label = '') {
-  return dom(customElements.controlButtonContainer, { class: buttonClass }, null, [
+  return dom('xkit-control-button-container', { class: buttonClass }, null, [
     dom('button', { class: 'xkit-control-button', 'aria-label': label, title: label }, null, [
       dom('span', { class: 'xkit-control-button-inner', tabindex: '-1' }, null, [
         buildSvg(symbolId)
