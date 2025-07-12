@@ -239,27 +239,6 @@ class XKitFeatureElement extends HTMLElement {
   get relatedTerms () {
     return this.#relatedTerms;
   }
-
-  render ({
-    description = '',
-    icon = {},
-    title = this.#featureName
-  }) {
-    const children = [
-      description && dom('span', { slot: 'description' }, null, [description]),
-      icon.class_name && dom(
-        'i',
-        {
-          slot: 'icon',
-          class: `ri-fw ${icon.class_name}`,
-          style: `color: ${icon.color ?? '#000000'}; background-color: ${icon.background_color ?? '#ffffff'}`
-        }
-      ),
-      title && dom('span', { slot: 'title' }, null, [title])
-    ].filter(Boolean);
-
-    this.replaceChildren(...children);
-  }
 }
 
 customElements.define('xkit-feature', XKitFeatureElement);
@@ -281,12 +260,12 @@ const renderFeatures = async function () {
     const file = await fetch(url);
     const {
       deprecated,
-      description,
+      description = '',
       help,
-      icon,
+      icon = {},
       preferences,
       relatedTerms,
-      title
+      title = featureName
     } = await file.json();
 
     const disabled = enabledFeatures.includes(featureName) === false;
@@ -294,9 +273,25 @@ const renderFeatures = async function () {
       continue;
     }
 
-    const featureElement = document.createElement('xkit-feature');
+    const featureElement = dom(
+      'xkit-feature',
+      null,
+      null,
+      [
+        description && dom('span', { slot: 'description' }, null, [description]),
+        icon.class_name && dom(
+          'i',
+          {
+            slot: 'icon',
+            class: `ri-fw ${icon.class_name}`,
+            style: `color: ${icon.color ?? '#000000'}; background-color: ${icon.background_color ?? '#ffffff'}`
+          }
+        ),
+        title && dom('span', { slot: 'title' }, null, [title])
+      ].filter(Boolean)
+    );
+
     Object.assign(featureElement, { deprecated, disabled, featureName, help, preferences, relatedTerms });
-    featureElement.render({ description, icon, title });
 
     featureElements.push(featureElement);
   }
