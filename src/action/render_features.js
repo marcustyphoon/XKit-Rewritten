@@ -1,4 +1,4 @@
-import { html, render } from '../lib/htm-preact-standalone.module.js';
+import { html, render, useMemo } from '../lib/htm-preact-standalone.module.js';
 
 const configSection = document.getElementById('configuration');
 const configSectionLink = document.querySelector('a[href="#configuration"]');
@@ -70,68 +70,76 @@ const writePreference = async function ({ target }) {
   }
 };
 
-const renderPreferences = function ({ featureName, preferences, preferenceList, storageLocal }) {
-  for (const [key, preference] of Object.entries(preferences)) {
-    const storageKey = `${featureName}.preferences.${key}`;
-    const { [storageKey]: savedPreference } = storageLocal;
-    preference.value = savedPreference ?? preference.default;
+const Preference = ({ preferenceKey, preference, featureName }) => {
+  const id = `${featureName}.${preference.type}.${preferenceKey}`;
+  const label = preference.label || preferenceKey;
+  const oninput = useMemo(
+    () => ['text', 'textarea'].includes(preference.type) ? debounce(writePreference, 500) : writePreference,
+    [preference.type]
+  );
 
-    const preferenceTemplateClone = document.getElementById(`${preference.type}-preference`).content.cloneNode(true);
-
-    const preferenceInput = preferenceTemplateClone.querySelector('input, select, textarea, iframe');
-    preferenceInput.id = `${featureName}.${preference.type}.${key}`;
-
-    const preferenceLabel = preferenceTemplateClone.querySelector('label');
-    if (preferenceLabel) {
-      preferenceLabel.textContent = preference.label || key;
-      preferenceLabel.setAttribute('for', `${featureName}.${preference.type}.${key}`);
-    } else {
-      preferenceInput.title = preference.label || key;
-    }
-
-    switch (preference.type) {
-      case 'text':
-      case 'textarea':
-        preferenceInput.addEventListener('input', debounce(writePreference, 500));
-        break;
-      case 'iframe':
-        break;
-      default:
-        preferenceInput.addEventListener('input', writePreference);
-    }
-
-    switch (preference.type) {
-      case 'checkbox':
-        preferenceInput.checked = preference.value;
-        break;
-      case 'select':
-        for (const { value, label } of preference.options) {
-          const option = document.createElement('option');
-          option.value = value;
-          option.textContent = label;
-          option.selected = value === preference.value;
-          preferenceInput.appendChild(option);
-        }
-        break;
-      case 'color':
-        preferenceInput.value = preference.value;
-        $(preferenceInput)
-          .on('change.spectrum', writePreference)
-          .spectrum({
-            preferredFormat: 'hex',
-            showInput: true,
-            showInitial: true,
-            allowEmpty: true
-          });
-        break;
-      case 'iframe':
-        preferenceInput.src = preference.src;
-        break;
-      default:
-        preferenceInput.value = preference.value;
-    }
-
-    preferenceList.appendChild(preferenceTemplateClone);
+  switch (preference.type) {
+    case 'checkbox':
+      return html`
+        <li>
+          <input id=${id} type="checkbox" checked=${preference.value} oninput=${oninput} />
+          <label for=${id}>${label}</label>
+        </li>
+      `;
+    case 'text':
+      return html`
+        <li>
+          <label for=${id}>${label}</label>
+          <input id=${id} type="text" spellcheck="false" value=${preference.value} oninput=${oninput} />
+        </li>
+      `;
+    case 'select':
+      return html`
+        <li>
+          <label for=${id}>${label}</label>
+          <select id=${id} oninput=${oninput}>
+            ${preference.options.map(({ value, label }) => html`
+              <option value=${value} selected=${value === preference.value}>${label}</option>
+            `)}
+          </select>
+        </li>
+      `;
+    case 'color':
+      return html`
+        <li>
+          <input
+            value=${preference.value}
+            id=${id}
+            type="text"
+            ref=${preferenceInput =>
+              $(preferenceInput)
+                .on('change.spectrum', writePreference)
+                .spectrum({
+                  preferredFormat: 'hex',
+                  showInput: true,
+                  showInitial: true,
+                  allowEmpty: true
+                })
+            }
+          />
+          <label for=${id}>${label}</label>
+        </li>
+      `;
+    case 'textarea':
+      return html`
+        <li>
+          <label for=${id}>${label}</label>
+        </li>
+        <li>
+          <textarea id=${id} rows="5" spellcheck="false" value=${preference.value} oninput=${oninput}></textarea>
+        </li>
+      `;
+    case 'iframe':
+      return html`
+        <li>
+          <iframe title=${label} id=${id} src=${preference.src}></iframe>
+        </li>
+      `;
   }
 };
 
@@ -166,6 +174,14 @@ const renderFeatures = async function () {
     const disabled = enabledFeatures.includes(featureName) === false;
     if (disabled && deprecated && !specialAccess.includes(featureName)) continue;
 
+    const preferenceElements = Object.entries(preferences).map(([preferenceKey, preference]) => {
+      const storageKey = `${featureName}.preferences.${preferenceKey}`;
+      const { [storageKey]: savedPreference } = storageLocal;
+      preference.value = savedPreference ?? preference.default;
+
+      return html`<${Preference} ...${{ preferenceKey, preference, featureName }} />`;
+    });
+
     featureElements.push(html`
       <details
         class="feature${disabled ? ' disabled' : ''}"
@@ -195,10 +211,7 @@ const renderFeatures = async function () {
           </div>
         </summary>
         <p class="note">${note}</p>
-        <ul
-          class="preferences"
-          ref=${preferenceList => renderPreferences({ featureName, preferences, preferenceList, storageLocal })}
-        />
+        <ul class="preferences">${preferenceElements}</ul>
       </details>
     `);
   }
