@@ -1,3 +1,5 @@
+import { LitElement, css, html, ref } from '../lib/lit-all.min.js';
+
 const configSection = document.getElementById('configuration');
 const configSectionLink = document.querySelector('a[href="#configuration"]');
 const featuresDiv = configSection.querySelector('.features');
@@ -134,114 +136,67 @@ const renderPreferences = async function ({ featureName, preferences, preference
   }
 };
 
-class XKitFeatureElement extends HTMLElement {
-  #detailsElement;
-  #enabledInput;
-  #helpAnchor;
-  #preferencesList;
+class XKitFeatureElement extends LitElement {
+  // TODO: reflect enabled for investigation purposes—probably don't want to do this?
+  static properties = {
+    deprecated: { type: Boolean, reflect: true },
+    disabled: { type: Boolean, reflect: true },
+    featureName: { reflect: true },
+    help: { reflect: true },
+    preferences: { type: Object, reflect: true },
+    relatedTerms: { type: Array, reflect: true },
+  };
 
-  constructor () {
-    super();
+  static styles = css`
+    /* TODO: could inline xkit-feature.css here */
+  `;
 
-    const { content } = document.getElementById(this.localName);
-    const shadowRoot = this.attachShadow({ mode: 'open' });
-    shadowRoot.replaceChildren(content.cloneNode(true));
+  render () {
+    return html`
+      <link rel="stylesheet" href="../lib/normalize.min.css">
+      <link rel="stylesheet" href="../lib/remixicon/remixicon.css">
+      <link rel="stylesheet" href="../lib/spectrum.css">
+      <link rel="stylesheet" href="../lib/toggle-button.css">
+      <link rel="stylesheet" href="./components/xkit-feature.css">
 
-    this.#detailsElement = shadowRoot.querySelector('details');
-    this.#enabledInput = shadowRoot.querySelector('input[type="checkbox"]');
-    this.#helpAnchor = shadowRoot.querySelector('a.help');
-    this.#preferencesList = shadowRoot.querySelector('ul.preferences');
+      <!-- TODO: probably remove these attrs? -->
+      <details
+        class="feature${this.disabled ? ' disabled' : ''}"
+        data-related-terms=${this.relatedTerms}
+        ?data-deprecated=${this.deprecated}
+      >
+        <summary>
+          <div class="icon">
+            <slot name="icon"></slot>
+          </div>
+          <div class="meta">
+            <h4 class="title"><slot name="title"></slot></h4>
+            <p class="description"><slot name="description"></slot></p>
+          </div>
+          <div class="buttons">
+            <a class="help" target="_blank" href=${this.help}}>
+              <i class="ri-fw ri-question-fill" style="color:rgb(var(--black))"></i>
+            </a>
+            <input
+              id=${this.featureName}
+              type="checkbox"
+              ?checked=${!this.disabled}
+              class="toggle-button"
+              aria-label="Enable this feature"
+              @input=${handleEnabledInputClick}
+            />
+          </div>
+        </summary>
+        <ul class="preferences" ${ref(preferenceList => renderPreferences({ featureName: this.featureName, preferences: this.preferences, preferenceList }))}></ul>
+      </details>
+    `;
   }
 
-  connectedCallback () {
-    this.#enabledInput.addEventListener('input', handleEnabledInputClick);
-  }
-
-  disconnectedCallback () {
-    this.#enabledInput.removeEventListener('input', handleEnabledInputClick);
-  }
-
-  /** @type {boolean} Whether to hide the feature on installations on which it was not enabled at the time of deprecation. */
-  #deprecated = false;
-
-  set deprecated (deprecated = false) {
-    this.#detailsElement.dataset.deprecated = deprecated;
-    this.#deprecated = deprecated;
-  }
-
-  get deprecated () { return this.#deprecated; }
-
-  /** @type {boolean} True if the feature can be enabled. Defaults to `false`. */
-  #disabled = false;
-
-  set disabled (disabled = false) {
-    this.#detailsElement.classList.toggle('disabled', disabled);
-    this.#enabledInput.checked = !disabled;
-    this.#disabled = disabled;
-  }
-
-  get disabled () { return this.#disabled; }
-
-  /** @type {string} The internal name of the feature. Required; has no default. */
-  #featureName;
-
-  set featureName (featureName) {
-    this.#enabledInput.id = featureName;
-    this.#featureName = featureName;
-  }
-
-  get featureName () {
-    return this.#featureName ?? '';
-  }
-
-  /** @type {string} URL which points to a usage guide or extended description for the feature. */
-  #help;
-
-  set help (help) {
-    if (!help) return;
-    this.#helpAnchor.href = help;
-    this.#help = help;
-  }
-
-  get help () {
-    return this.#help ?? '';
-  }
-
-  /** @type {Record<string, object>} Keys are preference names; values are preference definitions. */
-  #preferences = {};
-
-  set preferences (preferences = {}) {
-    if (Object.keys(preferences).length === 0) return;
-
-    renderPreferences({
-      featureName: this.#featureName,
-      preferences,
-      preferenceList: this.#preferencesList
-    });
-
-    this.#preferences = preferences;
-  }
-
-  get preferences () {
-    return this.#preferences;
-  }
-
-  /** @type {string[]} An optional array of strings related to this feature that a user might search for. Case insensitive. */
-  #relatedTerms = [];
-
-  set relatedTerms (relatedTerms = []) {
-    this.dataset.relatedTerms = relatedTerms;
-    this.#relatedTerms = relatedTerms;
-  }
-
-  get relatedTerms () {
-    return this.#relatedTerms;
-  }
-
-  render ({
+  // TODO: this could just be in the html and not use slots at all but then what's the point.
+  renderChildren ({
     description = '',
     icon = {},
-    title = this.#featureName
+    title = this.featureName
   }) {
     const children = [];
 
@@ -306,7 +261,7 @@ const renderFeatures = async function () {
 
     const featureElement = document.createElement('xkit-feature');
     Object.assign(featureElement, { deprecated, disabled, featureName, help, preferences, relatedTerms });
-    featureElement.render({ description, icon, title });
+    featureElement.renderChildren({ description, icon, title });
 
     featureElements.push(featureElement);
   }
