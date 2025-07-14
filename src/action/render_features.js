@@ -1,4 +1,5 @@
-import { html, render, useMemo } from '../lib/htm-preact-standalone.module.js';
+import { html, render } from '../lib/lit-html/lit-html.js';
+import { ref } from '../lib/lit-html/directives/ref.js';
 
 const configSection = document.getElementById('configuration');
 const configSectionLink = document.querySelector('a[href="#configuration"]');
@@ -73,16 +74,15 @@ const writePreference = async function ({ target }) {
 const Preference = ({ preferenceKey, preference, featureName }) => {
   const id = `${featureName}.${preference.type}.${preferenceKey}`;
   const label = preference.label || preferenceKey;
-  const oninput = useMemo(
-    () => ['text', 'textarea'].includes(preference.type) ? debounce(writePreference, 500) : writePreference,
-    [preference.type]
-  );
+  const oninput = ['text', 'textarea'].includes(preference.type)
+    ? debounce(writePreference, 500)
+    : writePreference;
 
   switch (preference.type) {
     case 'checkbox':
       return html`
         <li>
-          <input id=${id} type="checkbox" checked=${preference.value} oninput=${oninput} />
+          <input id=${id} type="checkbox" ?checked=${preference.value} @input=${oninput} />
           <label for=${id}>${label}</label>
         </li>
       `;
@@ -90,16 +90,16 @@ const Preference = ({ preferenceKey, preference, featureName }) => {
       return html`
         <li>
           <label for=${id}>${label}</label>
-          <input id=${id} type="text" spellcheck="false" value=${preference.value} oninput=${oninput} />
+          <input id=${id} type="text" spellcheck="false" value=${preference.value} @input=${oninput} />
         </li>
       `;
     case 'select':
       return html`
         <li>
           <label for=${id}>${label}</label>
-          <select id=${id} oninput=${oninput}>
+          <select id=${id} @input=${oninput}>
             ${preference.options.map(({ value, label }) => html`
-              <option value=${value} selected=${value === preference.value}>${label}</option>
+              <option value=${value} ?selected=${value === preference.value}>${label}</option>
             `)}
           </select>
         </li>
@@ -111,7 +111,7 @@ const Preference = ({ preferenceKey, preference, featureName }) => {
             value=${preference.value}
             id=${id}
             type="text"
-            ref=${preferenceInput =>
+            ${ref(preferenceInput =>
               $(preferenceInput)
                 .on('change.spectrum', writePreference)
                 .spectrum({
@@ -120,7 +120,7 @@ const Preference = ({ preferenceKey, preference, featureName }) => {
                   showInitial: true,
                   allowEmpty: true
                 })
-            }
+            )}
           />
           <label for=${id}>${label}</label>
         </li>
@@ -131,7 +131,7 @@ const Preference = ({ preferenceKey, preference, featureName }) => {
           <label for=${id}>${label}</label>
         </li>
         <li>
-          <textarea id=${id} rows="5" spellcheck="false" value=${preference.value} oninput=${oninput}></textarea>
+          <textarea id=${id} rows="5" spellcheck="false" @input=${oninput}>${preference.value}</textarea>
         </li>
       `;
     case 'iframe':
@@ -179,7 +179,7 @@ const renderFeatures = async function () {
       const { [storageKey]: savedPreference } = storageLocal;
       preference.value = savedPreference ?? preference.default;
 
-      return html`<${Preference} ...${{ preferenceKey, preference, featureName }} />`;
+      return Preference({ preferenceKey, preference, featureName });
     });
 
     featureElements.push(html`
@@ -190,23 +190,23 @@ const renderFeatures = async function () {
       >
         <summary>
           <div class="icon" style="background-color: ${icon.background_color || '#ffffff'}">
-            <i class="ri-fw ${icon.class_name}" style="color: ${icon.color || '#000000'}" />
+            <i class="ri-fw ${icon.class_name}" style="color: ${icon.color || '#000000'}"></i>
           </div>
           <div class="meta">
             <h4 class="title">${title}</h4>
             <p class="description">${description}</p>
           </div>
           <div class="buttons">
-            <a class="help" target="_blank" ...${help ? { href: help } : {}}>
-              <i class="ri-fw ri-question-fill" style="color:rgb(var(--black))" />
+            <a class="help" target="_blank" href=${help}}>
+              <i class="ri-fw ri-question-fill" style="color:rgb(var(--black))"></i>
             </a>
             <input
               id=${featureName}
               type="checkbox"
-              checked=${!disabled}
+              ?checked=${!disabled}
               class="toggle-button"
               aria-label="Enable this feature"
-              oninput=${writeEnabled}
+              @input=${writeEnabled}
             />
           </div>
         </summary>
