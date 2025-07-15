@@ -45,9 +45,13 @@ jobs:
         run: dev/release-notes.sh
 
       - name: Create Github release draft
+        id: create-draft
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ needs.get-version-if-new.outputs.version }}
           tag_name: v${{ needs.get-version-if-new.outputs.version }}
           body_path: release-notes.md
           draft: true
+
+      - run: >
+          echo "Created draft: ${{ steps.create-draft.outputs.url }}" >> $GITHUB_STEP_SUMMARY
