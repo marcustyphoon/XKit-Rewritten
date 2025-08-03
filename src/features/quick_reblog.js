@@ -1,17 +1,16 @@
 import { sha256 } from '../utils/crypto.js';
 import { timelineObject } from '../utils/react_props.js';
 import { apiFetch } from '../utils/tumblr_helpers.js';
-import { postSelector, filterPostElements, postType, appendWithoutOverflow } from '../utils/interface.js';
+import { postSelector, filterPostElements, postType, appendWithoutOverflow, buildStyle } from '../utils/interface.js';
 import { joinedCommunities, joinedCommunityUuids, primaryBlog, userBlogs } from '../utils/user.js';
 import { getPreferences } from '../utils/preferences.js';
 import { onNewPosts } from '../utils/mutations.js';
 import { notify } from '../utils/notifications.js';
-import { translate } from '../utils/language_data.js';
 import { dom } from '../utils/dom.js';
 import { showErrorModal } from '../utils/modals.js';
 import { keyToCss } from '../utils/css_map.js';
 
-const popupElement = dom('div', { id: 'quick-reblog' });
+const popupElement = dom('div', { id: 'quick-reblog' }, { click: event => event.stopPropagation() });
 const blogSelector = dom('select');
 const blogAvatar = dom('div', { class: 'avatar' });
 const blogSelectorContainer = dom('div', { class: 'select-container' }, null, [blogAvatar, blogSelector]);
@@ -69,10 +68,22 @@ const quickTagsStorageKey = 'quick_tags.preferences.tagBundles';
 const blogHashes = new Map();
 const avatarUrls = new Map();
 
-const reblogButtonSelector = `
-${postSelector} footer a[href*="/reblog/"],
-${postSelector} footer button[aria-label="${translate('Reblog')}"]:not([role])
-`;
+const buttonSelector = `${postSelector} footer a, ${postSelector} footer button`;
+const reblogButtonSelector = `${postSelector} footer :is(a[href*="/reblog/"], button:has(use[href="#managed-icon__ds-reblog-24"]))`;
+const buttonDivSelector = `${keyToCss('controls', 'reblogsControl', 'engagementControls')} > *`;
+
+export const styleElement = buildStyle(`
+:has(${keyToCss('bubbles')}) > #quick-reblog {
+  display: none;
+}
+
+${keyToCss('engagementAction', 'targetWrapperFlex')}:has(> #quick-reblog) {
+  position: relative;
+}
+${keyToCss('engagementAction', 'targetWrapperFlex')}:has(> #quick-reblog) ${keyToCss('tooltip')} {
+  display: none;
+}
+`);
 
 const onBlogSelectorChange = () => {
   blogAvatar.style.backgroundImage = `url(${avatarUrls.get(blogSelector.value)})`;
@@ -128,13 +139,22 @@ tagsInput.addEventListener('input', updateTagSuggestions);
 tagsInput.addEventListener('input', doSmartQuotes);
 tagsInput.addEventListener('input', checkLength);
 
-const showPopupOnHover = ({ currentTarget }) => {
-  clearTimeout(timeoutID);
+const showPopupOnHover = async ({ currentTarget }) => {
+  if (!currentTarget.matches(reblogButtonSelector)) return;
 
-  appendWithoutOverflow(popupElement, currentTarget.closest(keyToCss('controlIcon')), popupPosition);
-  popupElement.parentNode.addEventListener('mouseleave', removePopupOnLeave);
+  const buttonDiv = currentTarget.closest(buttonDivSelector) ?? currentTarget.parentElement;
+  if (buttonDiv.matches(':has([aria-expanded="true"])')) return;
 
   const thisPost = currentTarget.closest(postSelector);
+  const { blog, canReblog } = await timelineObject(thisPost);
+  if (canReblog === false || blog?.isPasswordProtected) return;
+
+  clearTimeout(timeoutID);
+
+  appendWithoutOverflow(popupElement, buttonDiv, popupPosition);
+  popupElement.parentNode.addEventListener('click', removePopupOnClick, { once: true });
+  popupElement.parentNode.addEventListener('mouseleave', removePopupOnLeave);
+
   const thisPostID = thisPost.dataset.id;
   if (thisPostID !== lastPostID) {
     if (!rememberLastBlog) {
@@ -156,23 +176,29 @@ const showPopupOnHover = ({ currentTarget }) => {
   lastPostID = thisPostID;
 };
 
+const removePopupOnClick = () => {
+  clearTimeout(timeoutID);
+  popupElement.parentNode?.removeEventListener('mouseleave', removePopupOnLeave);
+  popupElement.remove();
+};
+
 const removePopupOnLeave = () => {
   timeoutID = setTimeout(() => {
-    const { parentNode } = popupElement;
-    if (parentNode?.matches(':hover, :active, :focus-within') === false) {
-      parentNode?.removeEventListener('mouseleave', removePopupOnLeave);
+    if (!popupElement.matches(':focus-within') && !popupElement.parentNode?.matches(':hover')) {
+      popupElement.parentNode?.removeEventListener('click', removePopupOnClick);
+      popupElement.parentNode?.removeEventListener('mouseleave', removePopupOnLeave);
       popupElement.remove();
     }
   }, 500);
 };
 
-const makeButtonReblogged = ({ buttonDiv, state }) => {
-  ['published', 'queue', 'draft'].forEach(className => buttonDiv.classList.remove(className));
-  buttonDiv.classList.add(state);
+const markPostReblogged = ({ footer, state }) => {
+  footer.classList.remove('published', 'queue', 'draft');
+  footer.classList.add(state);
 };
 
 const reblogPost = async function ({ currentTarget }) {
-  const currentReblogButton = popupElement.parentNode;
+  const footer = popupElement.closest('footer');
 
   currentTarget.blur();
   actionButtons.disabled = true;
@@ -203,7 +229,7 @@ const reblogPost = async function ({ currentTarget }) {
   try {
     const { meta, response } = await apiFetch(requestPath, { method: 'POST', body: requestBody });
     if (meta.status === 201) {
-      makeButtonReblogged({ buttonDiv: currentReblogButton, state });
+      markPostReblogged({ footer, state });
 
       if (lastPostID === postID) {
         popupElement.remove();
@@ -247,8 +273,8 @@ const processPosts = async function (postElements) {
 
     if (alreadyRebloggedList.includes(rootID)) {
       const reblogLink = postElement.querySelector(reblogButtonSelector);
-      const buttonDiv = reblogLink?.closest('div');
-      if (buttonDiv) makeButtonReblogged({ buttonDiv, state: 'published' });
+      const footer = reblogLink?.closest('footer');
+      if (footer) markPostReblogged({ footer, state: 'published' });
     }
   });
 };
@@ -306,7 +332,9 @@ const updateRememberedBlog = async ({ currentTarget: { value: selectedBlog } }) 
  */
 const MOZ_SOURCE_TOUCH = 5;
 
-const preventLongPressMenu = ({ originalEvent: event }) => {
+const preventLongPressMenu = ({ currentTarget, originalEvent: event }) => {
+  if (!currentTarget.matches(reblogButtonSelector)) return;
+
   const isTouchEvent = event.pointerType === 'touch';
   const firefoxIsTouchEvent = event.mozInputSource === MOZ_SOURCE_TOUCH;
 
@@ -367,8 +395,8 @@ export const main = async function () {
   quickTagsList.hidden = !quickTagsIntegration;
   tagsInput.hidden = !showTagsInput;
 
-  $(document.body).on('mouseenter', reblogButtonSelector, showPopupOnHover);
-  $(document.body).on('contextmenu', reblogButtonSelector, preventLongPressMenu);
+  $(document.body).on('mouseenter', buttonSelector, showPopupOnHover);
+  $(document.body).on('contextmenu', buttonSelector, preventLongPressMenu);
 
   if (quickTagsIntegration) {
     browser.storage.onChanged.addListener(updateQuickTags);
@@ -381,8 +409,8 @@ export const main = async function () {
 };
 
 export const clean = async function () {
-  $(document.body).off('mouseenter', reblogButtonSelector, showPopupOnHover);
-  $(document.body).off('contextmenu', reblogButtonSelector, preventLongPressMenu);
+  $(document.body).off('mouseenter', buttonSelector, showPopupOnHover);
+  $(document.body).off('contextmenu', buttonSelector, preventLongPressMenu);
   popupElement.remove();
 
   blogSelector.removeEventListener('change', updateRememberedBlog);
