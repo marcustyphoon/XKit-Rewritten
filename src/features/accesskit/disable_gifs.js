@@ -3,13 +3,14 @@ import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
 import { getPreferences } from '../../utils/preferences.js';
+import { memoize } from '../../utils/memoize.js';
 
 const canvasClass = 'xkit-paused-gif-placeholder';
 const pausedPosterAttribute = 'data-paused-gif-use-poster';
+const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 const hoverContainerAttribute = 'data-paused-gif-hover-container';
 const labelAttribute = 'data-paused-gif-label';
 const containerClass = 'xkit-paused-gif-container';
-const backgroundGifClass = 'xkit-paused-background-gif';
 
 let loadingMode;
 
@@ -71,13 +72,8 @@ ${keyToCss('background')}[${labelAttribute}]::after {
   display: none;
 }
 
-.${backgroundGifClass}:not(:hover) {
-  background-image: none !important;
-  background-color: rgb(var(--secondary-accent));
-}
-
-.${backgroundGifClass}:not(:hover) > :is(div, span) {
-  color: rgb(var(--black));
+[style*="${pausedBackgroundImageVar}"]:not(${hovered}) {
+  background-image: var(${pausedBackgroundImageVar}) !important;
 }
 `);
 
@@ -91,6 +87,57 @@ const addLabel = (element, inside = false) => {
     target.clientHeight && target.clientHeight <= 30 && target.setAttribute(labelAttribute, 'hr');
   }
 };
+
+/**
+ * Fetches the selected image, tests if it is animated, and returns a canvas element with the paused
+ * image if it is. This is expensive; avoid using this where practical. On older browsers without
+ * ImageDecoder support, GIF images are assumed to be animated and WebP images are assumed to not be
+ * animated.
+ */
+const createPausedCanvasIfAnimated = memoize(async sourceUrl => {
+  const response = await fetch(sourceUrl, { headers: { Accept: 'image/webp,*/*' } });
+  const contentType = response.headers.get('Content-Type');
+  const canvas = document.createElement('canvas');
+
+  if (typeof ImageDecoder === 'function' && await ImageDecoder.isTypeSupported(contentType)) {
+    const decoder = new ImageDecoder({
+      type: contentType,
+      data: response.body,
+      preferAnimation: true
+    });
+    const { image: videoFrame } = await decoder.decode();
+    if (decoder.tracks.selectedTrack.animated === false) {
+      // source image is not animated; decline to pause it
+      return undefined;
+    }
+    canvas.width = videoFrame.displayWidth;
+    canvas.height = videoFrame.displayHeight;
+    canvas.getContext('2d').drawImage(videoFrame, 0, 0);
+  } else {
+    if (sourceUrl.endsWith('.webp')) {
+      // source image may not be animated; decline to pause it
+      return undefined;
+    }
+    const imageBitmap = await response.blob().then(blob => window.createImageBitmap(blob));
+    canvas.width = imageBitmap.width;
+    canvas.height = imageBitmap.height;
+    canvas.getContext('2d').drawImage(imageBitmap, 0, 0);
+  }
+  return canvas;
+});
+
+/**
+ * Fetches the selected image, tests if it is animated, and returns a blob URL with the paused image
+ * if it is. This is expensive and is a small memory leak, as the blob URL will never be revoked;
+ * avoid using this where practical.
+ */
+const createPausedUrlIfAnimated = memoize(async sourceUrl => {
+  const canvas = await createPausedCanvasIfAnimated(sourceUrl);
+  if (canvas) {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 1));
+    return URL.createObjectURL(blob);
+  }
+});
 
 const pauseGif = function (gifElement) {
   const image = new Image();
@@ -110,8 +157,19 @@ const pauseGif = function (gifElement) {
   };
 };
 
+const pauseWebP = async function (gifElement) {
+  const canvas = await createPausedCanvasIfAnimated(gifElement.currentSrc);
+  if (canvas) {
+    canvas.className = gifElement.className;
+    canvas.classList.add(canvasClass);
+    canvas.setAttribute('style', gifElement.getAttribute('style'));
+    gifElement.after(canvas);
+    addLabel(gifElement);
+  }
+};
+
 const processGifs = function (gifElements) {
-  gifElements.forEach(gifElement => {
+  gifElements.forEach(async gifElement => {
     if (gifElement.closest(`${keyToCss('avatarImage', 'subAvatarImage')}, .block-editor-writing-flow`)) return;
     const pausedGifElements = [...gifElement.parentNode.querySelectorAll(`.${canvasClass}`)];
     if (pausedGifElements.length) {
@@ -128,17 +186,27 @@ const processGifs = function (gifElements) {
       return;
     }
 
-    if (gifElement.complete && gifElement.currentSrc) {
-      pauseGif(gifElement);
-    } else {
-      gifElement.onload = () => pauseGif(gifElement);
-    }
+    const sourceUrl = gifElement.currentSrc ||
+      await new Promise(resolve => gifElement.addEventListener('load', () => resolve(gifElement.currentSrc), { once: true }));
+
+    sourceUrl.endsWith('.webp') ? pauseWebP(gifElement) : pauseGif(gifElement);
   });
 };
 
+const sourceUrlRegex = /(?<=url\(["'])[^)]*?\.(?:gif|gifv|webp)(?=["']\))/g;
 const processBackgroundGifs = function (gifBackgroundElements) {
-  gifBackgroundElements.forEach(gifBackgroundElement => {
-    gifBackgroundElement.classList.add(backgroundGifClass);
+  gifBackgroundElements.forEach(async gifBackgroundElement => {
+    const sourceValue = gifBackgroundElement.style.backgroundImage;
+    const sourceUrl = sourceValue.match(sourceUrlRegex)?.[0];
+    if (!sourceUrl) return;
+
+    const pausedUrl = await createPausedUrlIfAnimated(sourceUrl);
+    if (!pausedUrl) return;
+
+    gifBackgroundElement.style.setProperty(
+      pausedBackgroundImageVar,
+      sourceValue.replaceAll(sourceUrlRegex, pausedUrl)
+    );
     addLabel(gifBackgroundElement, true);
   });
 };
@@ -186,7 +254,7 @@ export const main = async function () {
         'topPost', // activity page top post
         'takeoverBanner' // advertisement
       )}
-    ) img[srcset*=".gif"]:not(${keyToCss('poster')})
+    ) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
 
@@ -194,15 +262,18 @@ export const main = async function () {
     ${keyToCss(
       'communityHeaderImage', // search page tags section header: https://www.tumblr.com/search/gif?v=tag
       'bannerImage', // tagged page sidebar header: https://www.tumblr.com/tagged/gif
-      'tagChicletWrapper' // "trending" / "your tags" timeline carousel entry: https://www.tumblr.com/dashboard/trending, https://www.tumblr.com/dashboard/hubs
-    )}[style*=".gif"]
+      'tagChicletWrapper', // "trending" / "your tags" timeline carousel entry: https://www.tumblr.com/dashboard/trending, https://www.tumblr.com/dashboard/hubs
+      'communityCategoryImage' // tumblr communities browse page entry: https://www.tumblr.com/communities/browse, https://www.tumblr.com/communities/browse/movies
+    )}:is([style*=".gif"], [style*=".webp"])
   `;
   pageModifications.register(gifBackgroundImage, processBackgroundGifs);
 
-  pageModifications.register(
-    `${keyToCss('listTimelineObject')} ${keyToCss('carouselWrapper')} ${keyToCss('postCard')}`, // recommended blog carousel entry: https://www.tumblr.com/tagged/gif
-    processHoverableElements
-  );
+  const hoverableElement = [
+    `${keyToCss('listTimelineObject')} ${keyToCss('carouselWrapper')} ${keyToCss('postCard')}`, // recommended blog carousel entry
+    `div:has(> a${keyToCss('cover')}):has(${keyToCss('communityCategoryImage')})`, // tumblr communities browse page entry: https://www.tumblr.com/communities/browse
+    `${keyToCss('gridTimelineObject')}` // likes page or patio grid view post: https://www.tumblr.com/likes
+  ].join(', ');
+  pageModifications.register(hoverableElement, processHoverableElements);
 
   pageModifications.register(
     `:is(${postSelector}, ${keyToCss('blockEditorContainer')}) ${keyToCss('rows')}`,
@@ -225,8 +296,9 @@ export const clean = async function () {
   );
 
   $(`.${canvasClass}`).remove();
-  $(`.${backgroundGifClass}`).removeClass(backgroundGifClass);
   $(`[${labelAttribute}]`).removeAttr(labelAttribute);
   $(`[${pausedPosterAttribute}]`).removeAttr(pausedPosterAttribute);
   $(`[${hoverContainerAttribute}]`).removeAttr(hoverContainerAttribute);
+  [...document.querySelectorAll(`[style*="${pausedBackgroundImageVar}"]`)]
+    .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
 };
