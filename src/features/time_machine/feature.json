@@ -1,0 +1,16 @@
+{
+  "title": "Time Machine",
+  "description": "Revert Tumblr Changes",
+  "icon": {
+    "class_name": "ri-settings-5-line",
+    "color": "white",
+    "background_color": "#000000"
+  },
+  "preferences": {
+    "footer": {
+      "type": "checkbox",
+      "label": "Restore the footer",
+      "default": false
+    }
+  }
+}
