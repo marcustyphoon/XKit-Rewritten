@@ -86,8 +86,6 @@ export const styleElement = buildStyle(`
 `);
 
 const footerContentSelector = `${keyToCss('postFooter')} > ${keyToCss('footerContent')}`;
-const postActivityInsideFooterSelector = `${footerContentSelector} + ${keyToCss('postActivity')}`;
-
 const isSingleActionVersionSelector = `:has(> ${keyToCss('engagementControls')} > button${keyToCss('engagementAction')})`;
 
 const processPosts = async function (postElements) {
@@ -102,24 +100,16 @@ const processPosts = async function (postElements) {
     // from within the expanded footer. only the "single action" footer variant has this.
     if (!footerContent || !footerContent.matches(isSingleActionVersionSelector)) return;
 
-    // this feature should not be enabled on narrow posts, which can be detected by checking if postActivity is
-    // at the bottom of the post. on narrow posts it's a modal and won't appear here.
-    const postActivity = postElement.querySelector(postActivityInsideFooterSelector);
-    if (!postActivity) return;
-
     footerContent.setAttribute(footerContentAttribute, '');
     footerContent.prepend(
       dom(
         'button',
         { class: buttonClass },
         {
-          click: () => {
-            if (postActivity.matches(keyToCss('isOpen'))) {
-              postActivity.querySelector('button:has(use[href="#managed-icon__ds-ui-x-20"])')?.click();
-            } else {
-              footerContent.querySelector('button:has(use[href="#managed-icon__ds-reply-outline-24"])')?.click();
-            }
-          }
+          click: () =>
+            footerContent
+              .querySelector('button:has(use[href="#managed-icon__ds-reply-outline-24"])')
+              ?.click()
         },
         [
           dom('span', null, null, [new Intl.NumberFormat().format(noteCount)]), // todo: localize
