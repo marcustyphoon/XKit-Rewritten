@@ -5,8 +5,8 @@ import { translate } from '../../utils/language_data.js';
 import { onNewPosts } from '../../utils/mutations.js';
 import { timelineObject } from '../../utils/react_props.js';
 
-const footerContentAttribute = 'data-xkit-note-count-footer';
 const buttonClass = 'xkit-note-count-button';
+const footerContentSelector = `${keyToCss('footerContent')}:has(> .${buttonClass})`;
 
 const shareSelector = 'div > :is(span, div, button):has(use[href="#managed-icon__ds-ui-upload-24"])';
 const replySelector = `${keyToCss('engagementControls')} > :is(span, div, button):has(use[href="#managed-icon__ds-reply-outline-24"])`;
@@ -15,22 +15,22 @@ const likeSelector = `${keyToCss('engagementControls')} > :is(span, div, button)
 
 export const styleElement = buildStyle(`
   /* Create simple flexbox layout */
-  [${footerContentAttribute}] > :is(${keyToCss('engagementControls')}, div:last-child:not([class])) {
+  ${footerContentSelector} > div {
     display: contents;
   }
-  [${footerContentAttribute}] {
+  ${footerContentSelector} {
     gap: 0;
     padding: 12px;
   }
-  [${footerContentAttribute}] > ${keyToCss('engagementControls')} > :is(span, div, button) {
+  ${footerContentSelector} > ${keyToCss('engagementControls')} > :is(span, div, button) {
     flex: 0;
   }
 
   /* Remove individual note counts */
-  [${footerContentAttribute}] button${keyToCss('engagementAction')} > ${keyToCss('engagementCount')} {
+  ${footerContentSelector} ${keyToCss('engagementCount')} {
     display: none;
   }
-  [${footerContentAttribute}] ${keyToCss('engagementAction')} + button${keyToCss('engagementCount')} {
+  ${footerContentSelector} ${keyToCss('engagementAction')} + button${keyToCss('engagementCount')} {
     display: none;
   }
 
@@ -49,26 +49,26 @@ export const styleElement = buildStyle(`
   }
 
   /* Arrange existing buttons */
-  [${footerContentAttribute}] ${keyToCss('blazeControl')} {
+  ${footerContentSelector} ${keyToCss('blazeControl')} {
     position: unset;
     order: -1;
   }
-  [${footerContentAttribute}] > ${shareSelector} {
+  ${footerContentSelector} > ${shareSelector} {
     order: 1;
   }
-  [${footerContentAttribute}] > ${replySelector} {
+  ${footerContentSelector} > ${replySelector} {
     order: 2;
   }
-  [${footerContentAttribute}] > ${reblogSelector} {
+  ${footerContentSelector} > ${reblogSelector} {
     order: 3;
   }
-  [${footerContentAttribute}] > ${likeSelector} {
+  ${footerContentSelector} > ${likeSelector} {
     order: 4;
   }
 
 
   /* Optional blaze button divider */
-  [${footerContentAttribute}]:has(${keyToCss('blazeControl')})::after {
+  ${footerContentSelector}:has(${keyToCss('blazeControl')})::after {
     display: block;
     width: 1px;
     height: 1.2em;
@@ -79,8 +79,7 @@ export const styleElement = buildStyle(`
   }
 `);
 
-const footerContentSelector = `${keyToCss('postFooter')} > ${keyToCss('footerContent')}`;
-const isSingleActionVersionSelector = `:has(> ${keyToCss('engagementControls')} > button${keyToCss('engagementAction')})`;
+const singleActionFooterContentSelector = `${keyToCss('postFooter')} > ${keyToCss('footerContent')}:has(> ${keyToCss('engagementControls')} > button${keyToCss('engagementAction')})`;
 
 const processPosts = async function (postElements) {
   filterPostElements(postElements).forEach(async postElement => {
@@ -88,14 +87,11 @@ const processPosts = async function (postElements) {
     if (state !== 'published') return;
     if (community) return;
 
-    const footerContent = postElement.querySelector(footerContentSelector);
-
     // this feature needs the "tabs2025" element to exist so the user can change between replies/reblogs/likes
     // from within the expanded footer. only the "single action" footer variant has this.
-    if (!footerContent || !footerContent.matches(isSingleActionVersionSelector)) return;
+    const footerContent = postElement.querySelector(singleActionFooterContentSelector);
 
-    footerContent.setAttribute(footerContentAttribute, '');
-    footerContent.prepend(
+    footerContent?.prepend(
       dom(
         'button',
         { class: buttonClass },
@@ -122,5 +118,4 @@ export const clean = async () => {
   onNewPosts.removeListener(processPosts);
 
   $(`.${buttonClass}`).remove();
-  $(`[${footerContentAttribute}]`).removeAttr(footerContentAttribute);
 };
