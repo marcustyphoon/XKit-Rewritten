@@ -7,7 +7,6 @@ import { timelineObject } from '../../utils/react_props.js';
 
 const footerContentAttribute = 'data-xkit-note-count-footer';
 const buttonClass = 'xkit-note-count-button';
-const gapClass = 'xkit-note-count-gap';
 
 const shareSelector = 'div > :is(span, div, button):has(use[href="#managed-icon__ds-ui-upload-24"])';
 const replySelector = `${keyToCss('engagementControls')} > :is(span, div, button):has(use[href="#managed-icon__ds-reply-outline-24"])`;
@@ -40,18 +39,13 @@ export const styleElement = buildStyle(`
     order: -20;
     height: 36px;
     padding: 6px 16px;
+    margin-right: auto;
 
     border: 1px solid rgba(var(--black), .15);
     border-radius: 18px;
   }
   .${buttonClass} > span {
     font-weight: 700;
-  }
-
-  /* Feature-added gap element */
-  .${gapClass} {
-    flex: 1;
-    order: -10;
   }
 
   /* Arrange existing buttons */
@@ -115,8 +109,7 @@ const processPosts = async function (postElements) {
           dom('span', null, null, [new Intl.NumberFormat().format(noteCount)]), // todo: localize
             ` ${translate('notes')}` // should ideally be singular when count is one
         ]
-      ),
-      dom('div', { class: gapClass })
+      )
     );
   });
 };
@@ -129,6 +122,5 @@ export const clean = async () => {
   onNewPosts.removeListener(processPosts);
 
   $(`.${buttonClass}`).remove();
-  $(`.${gapClass}`).remove();
   $(`[${footerContentAttribute}]`).removeAttr(footerContentAttribute);
 };
