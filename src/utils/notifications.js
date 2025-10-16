@@ -1,7 +1,8 @@
 import { keyToCss } from './css_map.js';
 import { div } from './dom.js';
 
-const toastContainer = div({ id: 'xkit-toasts' });
+const toastContainerId = 'xkit-toasts';
+const toastContainer = div({ id: toastContainerId });
 
 const drawerContentSelector = keyToCss('drawerContent');
 const sidebarSelector = keyToCss('sidebar', 'layoutSidebar');
@@ -14,8 +15,11 @@ const addToastContainerToPage = () => {
     document.body
   ].find(candidateNode => candidateNode !== null && getComputedStyle(candidateNode).display !== 'none');
 
-  if ([...targetNode.children].includes(toastContainer) === false) {
-    toastContainer.dataset.inSidebar = targetNode.matches(sidebarSelector);
+  if (targetNode.children.namedItem(toastContainerId) === null) {
+    const targetNodeIsSidebar = targetNode.matches(sidebarSelector);
+    toastContainer.dataset.inSidebar = targetNodeIsSidebar;
+    toastContainer.style.width = targetNodeIsSidebar ? `${targetNode.clientWidth}px` : '';
+
     targetNode.append(toastContainer);
   }
 };
