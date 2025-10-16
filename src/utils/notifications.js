@@ -4,6 +4,7 @@ import { div } from './dom.js';
 const toastContainerId = 'xkit-toasts';
 const toastContainer = div({ id: toastContainerId });
 
+const desktopLayoutSelector = keyToCss('desktopLayout');
 const drawerContentSelector = keyToCss('drawerContent');
 const sidebarSelector = keyToCss('sidebar', 'layoutSidebar');
 
@@ -11,7 +12,7 @@ const addToastContainerToPage = () => {
   const targetNode = [
     document.body.querySelector(`${drawerContentSelector} ${sidebarSelector}`),
     document.body.querySelector(drawerContentSelector),
-    document.body.querySelector(sidebarSelector),
+    document.body.querySelector(`${desktopLayoutSelector} ${sidebarSelector}`),
     document.body
   ].find(candidateNode => candidateNode !== null && getComputedStyle(candidateNode).display !== 'none');
 
