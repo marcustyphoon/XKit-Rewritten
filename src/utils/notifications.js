@@ -4,7 +4,7 @@ import { div } from './dom.js';
 const toastContainer = div({ id: 'xkit-toasts' });
 
 const drawerContentSelector = keyToCss('drawerContent');
-const sidebarSelector = keyToCss('sidebar');
+const sidebarSelector = keyToCss('sidebar', 'layoutSidebar');
 
 const addToastContainerToPage = () => {
   const targetNode = [
