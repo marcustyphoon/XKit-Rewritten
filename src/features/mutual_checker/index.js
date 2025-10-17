@@ -4,7 +4,7 @@ import { apiFetch } from '../../utils/tumblr_helpers.js';
 import { primaryBlogName } from '../../utils/user.js';
 import { keyToCss } from '../../utils/css_map.js';
 import { onNewPosts, onNewNotifications, pageModifications } from '../../utils/mutations.js';
-import { dom, path, svg } from '../../utils/dom.js';
+import { element, path, svg } from '../../utils/dom.js';
 import { getPreferences } from '../../utils/preferences.js';
 import { translate } from '../../utils/language_data.js';
 import { followingTimelineSelector } from '../../utils/timeline_id.js';
@@ -154,7 +154,7 @@ const createIcon = (blogName, color = 'rgb(var(--black))') =>
     viewBox: '0 0 1000 1000',
     fill: color
   }, [
-    dom('title', { xmlns: 'http://www.w3.org/2000/svg' }, null, [
+    element('title', { xmlns: 'http://www.w3.org/2000/svg' }, [
       translate('{{blogNameLink /}} follows you!').replace('{{blogNameLink /}}', blogName)
     ]),
     path({ d: mutualIconPath })
