@@ -12,6 +12,7 @@ export const styleElement = buildStyle(`
 [${activeAttr}] {
   display: flex;
   flex-direction: column;
+  height: unset !important;
 }
 
 [${activeAttr}] > div {
@@ -82,7 +83,7 @@ const scrollToBottomOnce = () => new Promise(resolve => {
 
   const scrollToBottom = () => {
     clearTimeout(timeoutID);
-    window.scrollTo({ top: document.documentElement.scrollHeight });
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
 
     timeoutID = setTimeout(() => {
       if (!document.querySelector(knightRiderLoaderSelector)) {
