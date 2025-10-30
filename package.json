@@ -4,11 +4,12 @@
   "type": "module",
   "scripts": {
     "test": "web-ext lint",
-    "posttest": "eslint src/",
+    "posttest": "npx @biomejs/biome check",
     "start": "web-ext run",
     "build": "web-ext build"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.2",
     "chrome-webstore-upload-cli": "^3.4.0",
     "eslint": "^9.36.0",
     "eslint-plugin-jsdoc": "^52.0.4",
