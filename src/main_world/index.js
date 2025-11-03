@@ -10,8 +10,9 @@ document.documentElement.addEventListener('xkit-injection-request', async event 
   const { id, path, args } = JSON.parse(detail);
 
   try {
-    moduleCache[path] ??= await import(path);
-    const func = moduleCache[path].default;
+    moduleCache[path] ??= import(path).catch(() => importFallback(path));
+    const module = await moduleCache[path];
+    const func = module.default;
 
     if (target.isConnected === false) return;
 
@@ -35,5 +36,17 @@ document.documentElement.addEventListener('xkit-injection-request', async event 
     );
   }
 }, { signal: controller.signal });
+
+const importFallback = async path => {
+  // This might be a non-standards-compliant browser that only lets web-accessible
+  // resources be fetched. Let's try something else!
+
+  console.warn('XKit Rewritten: applying data-uri fetch fallback to', path);
+
+  return fetch(path)
+    .then(response => response.text())
+    .then(code => `data:text/javascript;charset=utf-8,${encodeURIComponent(code)}`)
+    .then(dataUri => import(dataUri));
+};
 
 document.documentElement.dispatchEvent(new CustomEvent('xkit-injection-ready'));

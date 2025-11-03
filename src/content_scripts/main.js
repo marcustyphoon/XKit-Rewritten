@@ -102,8 +102,27 @@
     script.type = 'module';
     script.nonce = nonce;
     script.src = browser.runtime.getURL(`/main_world/index.js?t=${timestamp}`);
+    script.addEventListener('error', () => initMainWorldFallback(nonce), { once: true });
     document.documentElement.append(script);
   });
+
+  const initMainWorldFallback = async nonce => {
+    // This might be a non-standards-compliant browser that only lets web-accessible
+    // resources be fetched. Let's try something else!
+
+    console.warn('XKit Rewritten: applying data-uri fetch fallback to', '/main_world/index.js');
+
+    fetch(browser.runtime.getURL('/main_world/index.js'))
+      .then(response => response.text())
+      .then(code => `data:text/javascript;charset=utf-8,${encodeURIComponent(code)}`)
+      .then(dataUri => {
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.nonce = nonce;
+        script.src = dataUri;
+        document.documentElement.append(script);
+      });
+  };
 
   const init = async function () {
     $('style.xkit, link.xkit').remove();
