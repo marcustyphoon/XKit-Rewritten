@@ -10,8 +10,9 @@ document.documentElement.addEventListener('xkit-injection-request', async event 
   const { id, path, args } = JSON.parse(detail);
 
   try {
-    moduleCache[path] ??= await import(path);
-    const func = moduleCache[path].default;
+    moduleCache[path] ??= import(path);
+    const module = await moduleCache[path];
+    const func = module.default;
 
     if (target.isConnected === false) return;
 
