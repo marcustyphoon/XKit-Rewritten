@@ -36,12 +36,14 @@ const refreshCount = async function (tag, force = false) {
 
   if (anotherTabRefreshedThisTag && !force) {
     // another tab did a fetch while we were waiting; let it be the one in charge of updating this tag.
+    console.log('Tag Tracking+: SKIPPING ', tag);
     return;
   }
 
   // this tab is now in charge of updating this tag.
   storedLastRefreshes[tag] = now;
   await browser.storage.local.set({ [lastRefreshesStorageKey]: storedLastRefreshes });
+  console.log('Tag Tracking+: REFRESHING ', tag);
 
   let unreadCountString = '⚠️';
 
@@ -99,13 +101,13 @@ const refreshAllCounts = async (isFirstRun = false) => {
   for (const tag of trackedTags) {
     await Promise.all([
       refreshCount(tag, isFirstRun),
-      new Promise(resolve => setTimeout(resolve, isFirstRun ? 0 : 30000))
+      new Promise(resolve => setTimeout(resolve, isFirstRun ? 0 : 3000))
     ]);
   }
 };
 
 let intervalID = 0;
-const startRefreshInterval = () => { intervalID = setInterval(refreshAllCounts, 30000 * trackedTags.length); };
+const startRefreshInterval = () => { intervalID = setInterval(refreshAllCounts, 3000 * trackedTags.length); refreshAllCounts(); };
 const stopRefreshInterval = () => clearInterval(intervalID);
 
 const processPosts = async function (postElements) {
