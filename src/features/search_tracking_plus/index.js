@@ -1,10 +1,10 @@
-import { apiFetch, onClickNavigate } from '../utils/tumblr_helpers.js';
-import { filterPostElements } from '../utils/interface.js';
-import { timelineObject } from '../utils/react_props.js';
-import { onNewPosts } from '../utils/mutations.js';
-import { addSidebarItem, removeSidebarItem } from '../utils/sidebar.js';
-import { getPreferences } from '../utils/preferences.js';
-import { searchTimelineFilter } from '../utils/timeline_id.js';
+import { apiFetch, onClickNavigate } from '../../utils/tumblr_helpers.js';
+import { filterPostElements } from '../../utils/interface.js';
+import { timelineObject } from '../../utils/react_props.js';
+import { onNewPosts } from '../../utils/mutations.js';
+import { addSidebarItem, removeSidebarItem } from '../../utils/sidebar.js';
+import { getPreferences } from '../../utils/preferences.js';
+import { searchTimelineFilter } from '../../utils/timeline_id.js';
 
 const storageKey = 'search_tracking_plus.trackedSearchTimestamps';
 let timestamps;
