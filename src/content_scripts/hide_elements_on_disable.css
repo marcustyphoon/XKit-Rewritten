@@ -1,0 +1,5 @@
+@layer xkit-rewritten-hide-on-disable {
+  [data-xkit-rewritten-hide-on-disable]:not(#extra#specificity) {
+    display: revert-layer;
+  }
+}

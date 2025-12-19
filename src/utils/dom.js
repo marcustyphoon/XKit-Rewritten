@@ -20,6 +20,8 @@ export function dom (tagName, attributes = {}, events = {}, children = []) {
   events && Object.entries(events).forEach(([type, listener]) => element.addEventListener(type, listener));
   children && element.replaceChildren(...children);
 
+  element.setAttribute('data-xkit-rewritten-hide-on-disable', '');
+
   element.normalize();
   return element;
 }
@@ -45,6 +47,8 @@ export function element (tagName, properties = {}, children = []) {
   element.replaceChildren(...children);
   attributes.forEach(([name, value]) => element.setAttribute(name, value));
   events.forEach(([type, listener]) => element.addEventListener(type, listener));
+
+  element.setAttribute('data-xkit-rewritten-hide-on-disable', '');
 
   element.normalize();
   return element;

@@ -194,6 +194,10 @@ const processRows = function (rowsElements) {
         row.previousElementSibling.append(row);
       } else {
         const wrapper = div({ class: containerClass, [hoverContainerAttribute]: '' });
+
+        // intentionally not hidden on extension disable
+        wrapper.removeAttribute('data-xkit-rewritten-hide-on-disable');
+
         row.replaceWith(wrapper);
         wrapper.append(row);
       }

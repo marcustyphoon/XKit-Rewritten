@@ -21,6 +21,10 @@ const processPosts = async function (postElements) {
     const container = div({ class: containerClass });
     const wrapper = div({ class: wrapperClass }, [container]);
 
+    // intentionally not hidden on extension disable
+    container.removeAttribute('data-xkit-rewritten-hide-on-disable');
+    wrapper.removeAttribute('data-xkit-rewritten-hide-on-disable');
+
     footerElement.before(wrapper);
     while (wrapper.previousElementSibling && wrapper.previousElementSibling !== headerElement) {
       container.prepend(wrapper.previousElementSibling);

@@ -18,6 +18,7 @@ const cloneVideoElements = videoElements => videoElements.forEach(videoElement =
     className: vanillaVideoClass
   });
   newVideoElement.setAttribute('playsinline', true);
+  // intentionally not hidden on extension disable, so data-xkit-rewritten-hide-on-disable not added
 
   if (videoElement.width && videoElement.height) {
     newVideoElement.style.setProperty('aspect-ratio', `${videoElement.width} / ${videoElement.height}`);

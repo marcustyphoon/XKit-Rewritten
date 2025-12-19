@@ -27,6 +27,7 @@ const replaceSearchForm = function ([searchFormElement]) {
     }
   });
   searchFormElementClone.classList.add('classic-search');
+  // intentionally not hidden on extension disable, so data-xkit-rewritten-hide-on-disable not added
   searchFormElementClone.querySelector('input').replaceWith(searchInputElement);
   searchFormElement.parentNode.prepend(searchFormElementClone);
 };

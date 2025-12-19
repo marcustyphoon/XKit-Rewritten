@@ -106,8 +106,21 @@
     document.documentElement.append(script);
   });
 
+  const hideOnDisableStyleElement = Object.assign(document.createElement('style'), {
+    textContent: `
+      @layer xkit-rewritten-hide-on-disable {
+        [data-xkit-rewritten-hide-on-disable]:not(#extra#specificity) {
+          display: none;
+        }
+      }
+    `,
+    className: 'xkit'
+  });
+
   const init = async function () {
     $('style.xkit, link.xkit').remove();
+
+    document.documentElement.append(hideOnDisableStyleElement);
 
     browser.storage.local.onChanged.addListener(onStorageChanged);
 
