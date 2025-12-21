@@ -45,8 +45,10 @@ ${trailHeaderSelector}:has([data-router-url]:is(${trailAttributionLinkSelector})
  * alone, Tumblr syncs the last reblog and footer's hover state using :has().
  */
 ${anyElementEventPermalinkSelector}[${preventPostClickAttributeName}] {
-  background-color: unset !important;
+  background-color: var(--content-panel) !important;
   cursor: unset !important;
+
+  --themed-posts-trail-hover-shadow: none !important;
 }
 ${anyElementEventPermalinkSelector}[${preventPostClickAttributeName}] ${hasHoverColorSelector} {
   background-color: unset !important;

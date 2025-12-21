@@ -95,7 +95,9 @@ const processPosts = async function (postElements) {
         blogNameTrail.push(visibleBlog?.name);
       }
       [...postElement.querySelectorAll(reblogSelector)].forEach((reblog, i) => {
-        reblog.dataset.xkitThemed = blogNameTrail[i] ?? '';
+        if (blogNameTrail[i] !== visibleBlog.name) {
+          reblog.dataset.xkitThemed = blogNameTrail[i] ?? '';
+        }
       });
     }
   });
@@ -114,6 +116,20 @@ export const main = async function () {
 
       ${postSelector} ${reblogSelector}:not(:last-child) > :last-child {
         margin-bottom: 15px;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        /* Apply hover effect with inset box shadow instead of background. */
+        [data-xkit-themed]${keyToCss('reblog')}${keyToCss('withTrailItemPermalink')} {
+          background-color: var(--content-panel);
+
+          --themed-posts-trail-hover-shadow: none;
+          box-shadow: var(--themed-posts-trail-hover-shadow);
+          transition: box-shadow 0.2s linear;
+        }
+        [data-xkit-themed]${keyToCss('reblog')}${keyToCss('withTrailItemPermalink')}:hover {
+          --themed-posts-trail-hover-shadow: inset 0 0 0 9999px var(--content-tint);
+        }
       }
     `;
     if (missingPostMode === 'palette') {

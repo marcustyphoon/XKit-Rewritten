@@ -1,0 +1,52 @@
+diff --git a/src/features/themed_posts/index.js b/src/features/themed_posts/index.js
+index 7a42fac1..df6244c6 100644
+--- a/src/features/themed_posts/index.js
++++ b/src/features/themed_posts/index.js
+@@ -95,7 +95,9 @@ const processPosts = async function (postElements) {
+         blogNameTrail.push(visibleBlog?.name);
+       }
+       [...postElement.querySelectorAll(reblogSelector)].forEach((reblog, i) => {
+-        reblog.dataset.xkitThemed = blogNameTrail[i] ?? '';
++        if (blogNameTrail[i] !== visibleBlog.name) {
++          reblog.dataset.xkitThemed = blogNameTrail[i] ?? '';
++        }
+       });
+     }
+   });
+@@ -115,6 +117,20 @@ export const main = async function () {
+       ${postSelector} ${reblogSelector}:not(:last-child) > :last-child {
+         margin-bottom: 15px;
+       }
++
++      @media (hover: hover) and (pointer: fine) {
++        /* Apply hover effect with inset box shadow instead of background. */
++        [data-xkit-themed]${keyToCss('reblog')}${keyToCss('withTrailItemPermalink')} {
++          background-color: var(--content-panel);
++
++          --themed-posts-trail-hover-shadow: none;
++          box-shadow: var(--themed-posts-trail-hover-shadow);
++          transition: box-shadow 0.2s linear;
++        }
++        [data-xkit-themed]${keyToCss('reblog')}${keyToCss('withTrailItemPermalink')}:hover {
++          --themed-posts-trail-hover-shadow: inset 0 0 0 9999px var(--content-tint);
++        }
++      }
+     `;
+     if (missingPostMode === 'palette') {
+       styleElement.textContent += `
+diff --git a/src/features/tweaks/restore_attribution_links.js b/src/features/tweaks/restore_attribution_links.js
+index 5afbc005..db5ca06c 100644
+--- a/src/features/tweaks/restore_attribution_links.js
++++ b/src/features/tweaks/restore_attribution_links.js
+@@ -45,8 +45,10 @@ ${trailHeaderSelector}:has([data-router-url]:is(${trailAttributionLinkSelector})
+  * alone, Tumblr syncs the last reblog and footer's hover state using :has().
+  */
+ ${anyElementEventPermalinkSelector}[${preventPostClickAttributeName}] {
+-  background-color: unset !important;
++  background-color: var(--content-panel) !important;
+   cursor: unset !important;
++
++  --themed-posts-trail-hover-shadow: none !important;
+ }
+ ${anyElementEventPermalinkSelector}[${preventPostClickAttributeName}] ${hasHoverColorSelector} {
+   background-color: unset !important;
