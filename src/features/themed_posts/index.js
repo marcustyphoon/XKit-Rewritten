@@ -9,6 +9,7 @@ export const styleElement = buildStyle();
 const blogs = new Set();
 const groupsFromHex = /^#(?<red>[A-Fa-f0-9]{1,2})(?<green>[A-Fa-f0-9]{1,2})(?<blue>[A-Fa-f0-9]{1,2})$/;
 const reblogSelector = keyToCss('reblog');
+const clickableReblogSelector = `${keyToCss('reblog')}${keyToCss('withTrailItemPermalink')}`;
 const timelineSelector = keyToCss('timeline');
 
 let enableOnPeepr;
@@ -95,7 +96,9 @@ const processPosts = async function (postElements) {
         blogNameTrail.push(visibleBlog?.name);
       }
       [...postElement.querySelectorAll(reblogSelector)].forEach((reblog, i) => {
-        reblog.dataset.xkitThemed = blogNameTrail[i] ?? '';
+        if (blogNameTrail[i] !== visibleBlog.name) {
+          reblog.dataset.xkitThemed = blogNameTrail[i] ?? '';
+        }
       });
     }
   });
@@ -114,6 +117,22 @@ export const main = async function () {
 
       ${postSelector} ${reblogSelector}:not(:last-child) > :last-child {
         margin-bottom: 15px;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        /* Replace background with inset box shadows, which can transition multiple colors. */
+        [data-xkit-themed]${clickableReblogSelector} {
+          --themed-posts-trail-hover: transparent;
+
+          background-color: unset;
+          box-shadow:
+            inset 0 0 0 9999px var(--themed-posts-trail-hover),
+            inset 0 0 0 9999px var(--content-panel);
+          transition: box-shadow 0.2s linear;
+        }
+        [data-xkit-themed]${clickableReblogSelector}:hover {
+          --themed-posts-trail-hover: var(--content-tint);
+        }
       }
     `;
     if (missingPostMode === 'palette') {

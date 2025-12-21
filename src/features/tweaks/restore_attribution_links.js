@@ -47,6 +47,8 @@ ${trailHeaderSelector}:has([data-router-url]:is(${trailAttributionLinkSelector})
 ${anyElementEventPermalinkSelector}[${preventPostClickAttributeName}] {
   background-color: unset !important;
   cursor: unset !important;
+
+  --themed-posts-trail-hover: transparent !important;
 }
 ${anyElementEventPermalinkSelector}[${preventPostClickAttributeName}] ${hasHoverColorSelector} {
   background-color: unset !important;
