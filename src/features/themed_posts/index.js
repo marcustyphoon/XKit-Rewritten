@@ -119,17 +119,17 @@ export const main = async function () {
         margin-bottom: 15px;
       }
 
-      @media (hover: hover) and (pointer: fine) {
-        /* Replace background with inset box shadows, which can transition multiple colors. */
-        [data-xkit-themed]${clickableReblogSelector} {
-          --themed-posts-trail-hover: transparent;
+      /* Replace background with inset box shadows, which can transition multiple colors. */
+      [data-xkit-themed]${reblogSelector} {
+        --themed-posts-trail-hover: transparent;
 
-          background-color: unset;
-          box-shadow:
-            inset 0 0 0 9999px var(--themed-posts-trail-hover),
-            inset 0 0 0 9999px var(--content-panel);
-          transition: box-shadow 0.2s linear;
-        }
+        background-color: unset;
+        box-shadow:
+          inset 0 0 0 9999px var(--themed-posts-trail-hover),
+          inset 0 0 0 9999px var(--content-panel);
+        transition: box-shadow 0.2s linear;
+      }
+      @media (hover: hover) and (pointer: fine) {
         [data-xkit-themed]${clickableReblogSelector}:hover {
           --themed-posts-trail-hover: var(--content-tint);
         }
