@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src"]
+}
