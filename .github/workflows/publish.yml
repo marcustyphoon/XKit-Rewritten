@@ -48,6 +48,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: transform
+        run: npm run transform
+
       - name: Upload to Web Store
         run: npx chrome-webstore-upload
         env:

@@ -16,7 +16,7 @@ export default [
    */
   ...neostandard({
     env: ['browser', 'jquery', 'webextensions'],
-    ignores: ['src/lib/**'],
+    ignores: ['src/lib/**', 'dist/'],
     semi: true,
   }),
 
@@ -37,6 +37,8 @@ export default [
    * @see https://github.com/gajus/eslint-plugin-jsdoc/blob/main/docs/rules/require-hyphen-before-param-description.md
    */
   { rules: { 'jsdoc/require-hyphen-before-param-description': ['error', 'never', { tags: { '*': 'never' } }] } },
+
+  { rules: { 'react/jsx-key': 'off', '@stylistic/jsx-quotes': 'prefer-double' } },
 
   /**
    * Do not require JSDoc on "main world" injected scripts, which have definitions
