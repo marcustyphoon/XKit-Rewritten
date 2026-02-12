@@ -1,0 +1,9 @@
+{
+  "title": "Quick Draft Queue",
+  "description": "Queue drafts with a single click",
+  "icon": {
+    "class_name": "ri-time-line",
+    "color": "white",
+    "background_color": "#000000"
+  }
+}
