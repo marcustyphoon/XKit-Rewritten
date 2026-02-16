@@ -13,8 +13,8 @@ import { userBlogNames, userBlogs } from '../../utils/user.js';
 
 const storageKey = 'quote_replies.draftLocation';
 const buttonClass = 'xkit-quote-replies';
-const activityButtonClass = 'xkit-quote-replies-activity';
-const dropdownButtonClass = 'xkit-quote-replies-dropdown';
+const notificationButtonClass = 'xkit-quote-replies-notification';
+const notificationDropdownButtonClass = 'xkit-quote-replies-notification-dropdown';
 
 // Remove outdated elements when loading module
 $(`.${buttonClass}`).remove();
@@ -25,7 +25,7 @@ button.xkit-quote-replies {
   cursor: pointer;
 }
 
-button.xkit-quote-replies-activity {
+button.xkit-quote-replies-notification {
   position: relative;
   align-self: center;
   transform: translateY(-2px);
@@ -47,7 +47,7 @@ button.xkit-quote-replies:disabled svg {
   transition-property: none;
 }
 
-button.xkit-quote-replies-dropdown {
+button.xkit-quote-replies-notification-dropdown {
   align-self: flex-start;
   margin: 10px 0 0;
 }
@@ -91,7 +91,7 @@ const processNotifications = notifications => notifications.forEach(async notifi
   activityElement.after(dom(
     'button',
     {
-      class: `${buttonClass} ${activityButtonClass} ${notification.matches(dropdownSelector) ? dropdownButtonClass : ''}`,
+      class: `${buttonClass} ${notificationButtonClass} ${notification.matches(dropdownSelector) ? notificationDropdownButtonClass : ''}`,
       [displayInlineFlexUnlessDisabledAttr]: '',
       title: 'Quote this reply',
     },
