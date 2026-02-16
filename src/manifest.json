@@ -52,6 +52,7 @@
       ],
       "run_at": "document_end",
       "js": [
+        "browser_polyfill.js",
         "lib/jquery.slim.min.js",
         "content_scripts/main.js"
       ],
