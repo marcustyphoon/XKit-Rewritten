@@ -98,7 +98,7 @@ const processNotifications = notifications => notifications.forEach(async notifi
     {
       click () {
         this.disabled = true;
-        quoteActivityReply(tumblelogName, notificationProps)
+        quoteNotificationReply(tumblelogName, notificationProps)
           .catch(showErrorModal)
           .finally(() => { this.disabled = false; });
       },
@@ -107,15 +107,15 @@ const processNotifications = notifications => notifications.forEach(async notifi
   ));
 });
 
-const processNoteReplyButtons = replyCountButtons => replyCountButtons.forEach(async replyCountButton => {
-  const notePropsData = await notePropsObjects(replyCountButton);
+const processNoteReplyButtons = noteReplyButtons => noteReplyButtons.forEach(async noteReplyButton => {
+  const notePropsData = await notePropsObjects(noteReplyButton);
   const noteReplyType = determineNoteReplyType(notePropsData);
 
   if (!noteReplyType) return;
 
-  const timelineObjectData = await timelineObject(replyCountButton);
+  const timelineObjectData = await timelineObject(noteReplyButton);
 
-  replyCountButton.parentElement.append(dom(
+  noteReplyButton.parentElement.append(dom(
     'button',
     {
       class: buttonClass,
@@ -134,7 +134,7 @@ const processNoteReplyButtons = replyCountButtons => replyCountButtons.forEach(a
   ));
 });
 
-const createGenericActivityReplyPost = async (notificationProps) => {
+const createGenericNotificationReplyData = async (notificationProps) => {
   const {
     subtype: type,
     timestamp,
@@ -152,7 +152,7 @@ const createGenericActivityReplyPost = async (notificationProps) => {
       ? bodyDescriptionContent.text.slice(summaryFormatting.start + 1, summaryFormatting.end - 1)
       : bodyDescriptionContent.text;
 
-    return await createActivityReplyPost({ type, timestamp, targetPostId, targetTumblelogName, targetPostSummary });
+    return await createNotificationReplyData({ type, timestamp, targetPostId, targetTumblelogName, targetPostSummary });
   } catch (exception) {
     console.error(exception);
     console.debug('[XKit] Falling back to generic quote content due to fetch/parse failure');
@@ -185,7 +185,7 @@ const createGenericActivityReplyPost = async (notificationProps) => {
   return { content, tags };
 };
 
-const createActivityReplyPost = async ({ type, timestamp, targetPostId, targetTumblelogName, targetPostSummary }) => {
+const createNotificationReplyData = async ({ type, timestamp, targetPostId, targetTumblelogName, targetPostSummary }) => {
   const { response } = await apiFetch(
     `/v2/blog/${targetTumblelogName}/post/${targetPostId}/notes/timeline`,
     { queryParams: { mode: 'replies', before_timestamp: `${timestamp + 1}000000` } },
@@ -201,10 +201,10 @@ const createActivityReplyPost = async ({ type, timestamp, targetPostId, targetTu
   const { content: replyContent, blog: { name: replyingBlogName, uuid: replyingBlogUuid } } = reply;
   const targetPostUrl = `https://${targetTumblelogName}.tumblr.com/post/${targetPostId}`;
 
-  return createReplyPost({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent });
+  return createReplyData({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent });
 };
 
-const createReplyPost = ({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent }) => {
+const createReplyData = ({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent }) => {
   const verbiage = {
     reply: 'replied to your post',
     reply_to_comment: 'replied to you in a post',
@@ -229,12 +229,12 @@ const createReplyPost = ({ type, replyingBlogName, replyingBlogUuid, targetPostS
   return { content, tags };
 };
 
-const quoteActivityReply = async (tumblelogName, notificationProps) => {
-  const replyPost = notificationProps.type === 'generic'
-    ? await createGenericActivityReplyPost(notificationProps)
-    : await createActivityReplyPost(notificationProps);
+const quoteNotificationReply = async (tumblelogName, notificationProps) => {
+  const data = notificationProps.type === 'generic'
+    ? await createGenericNotificationReplyData(notificationProps)
+    : await createNotificationReplyData(notificationProps);
 
-  openQuoteReplyDraft(tumblelogName, replyPost);
+  openPostDraft(tumblelogName, data);
 };
 
 const determineNoteReplyType = ({ noteProps, parentNoteProps }) => {
@@ -279,14 +279,14 @@ const quoteNoteReply = async ({ notePropsData, noteReplyType, timelineObjectData
   const replyingBlogUuid = await apiFetch(`/v2/blog/${replyingBlogName}/info?fields[blogs]=uuid`)
     .then(({ response: { blog: { uuid } } }) => uuid);
 
-  const replyPost = createReplyPost({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent });
-  openQuoteReplyDraft(targetBlogName, replyPost);
+  const data = createReplyData({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent });
+  openPostDraft(targetBlogName, data);
 };
 
-const openQuoteReplyDraft = async (tumblelogName, replyPost) => {
+const openPostDraft = async (tumblelogName, data) => {
   const uuid = userBlogs.find(({ name }) => name === tumblelogName).uuid;
 
-  const { response: { id: responseId, displayText } } = await apiFetch(`/v2/blog/${uuid}/posts`, { method: 'POST', body: { state: 'draft', ...replyPost } });
+  const { response: { id: responseId, displayText } } = await apiFetch(`/v2/blog/${uuid}/posts`, { method: 'POST', body: { state: 'draft', ...data } });
 
   const currentDraftLocation = `/edit/${tumblelogName}/${responseId}`;
 
