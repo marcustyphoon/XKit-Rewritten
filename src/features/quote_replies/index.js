@@ -53,12 +53,12 @@ button.xkit-quote-replies-notification-dropdown {
 }
 
 @media (hover: hover) {
-  button.xkit-quote-replies-activity svg {
+  button.xkit-quote-replies-notification svg {
     opacity: 0;
     transform: scale(0);
   }
 
-  ${notificationSelector}:is(:hover, :focus-within) button.xkit-quote-replies-activity svg {
+  ${notificationSelector}:is(:hover, :focus-within) button.xkit-quote-replies-notification svg {
     opacity: 1;
     transform: scale(1);
   }
