@@ -37,6 +37,7 @@
   fill: var(--content-fg-secondary);
 }
 
+
 .xkit-control-button-container.in-legacy-footer .xkit-control-button-inner svg {
   fill: rgba(var(--black), 0.65);
 }
@@ -60,6 +61,7 @@
   }
 }
 
+
 .xkit-control-button-container:is(.in-new-footer, .in-community) {
   margin-left: 0;
 }
@@ -72,6 +74,7 @@
   display: flex;
   padding: 8px;
 }
+
 
 .xkit-control-button-container.in-community {
   align-self: center;
@@ -103,6 +106,7 @@
   fill: var(--content-fg-tertiary);
 }
 
+
 .xkit-controls-row {
   position: relative;
 
@@ -118,8 +122,8 @@
   left: 12px;
   right: 12px;
 
-  border-bottom: 1px solid rgba(var(--black), 0.13);
-  content: "";
+  border-bottom: 1px solid rgba(var(--black), .13);
+  content: '';
 }
 
 @media (max-width: 540px) {
