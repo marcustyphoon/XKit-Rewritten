@@ -63,7 +63,7 @@ class XKitFeatureElement extends CustomElement {
       [XKitFeatureElement.#specialAccessKey]: specialAccess = [],
     } = await browser.storage.local.get();
 
-    const hasPreferences = Object.keys(this.preferences).length !== 0;
+    const hasPreferences = this.querySelector('[slot="preferences"]') !== null;
     if (hasPreferences) this.#detailsElement.open = checked;
 
     if (checked) {
