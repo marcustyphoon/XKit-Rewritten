@@ -29,8 +29,6 @@ button.xkit-quote-replies-notification {
   position: relative;
   align-self: center;
   transform: translateY(-2px);
-
-  align-items: center;
   margin: 0 6px;
 }
 
