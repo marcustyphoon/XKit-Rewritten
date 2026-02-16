@@ -2,19 +2,18 @@ import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { inject } from '../../utils/inject.js';
 import { buildStyle, displayInlineFlexUnlessDisabledAttr, notificationSelector } from '../../utils/interface.js';
-import { registerReplyMeatballItem, unregisterReplyMeatballItem } from '../../utils/meatballs.js';
 import { showErrorModal } from '../../utils/modals.js';
 import { pageModifications } from '../../utils/mutations.js';
 import { notify } from '../../utils/notifications.js';
 import { getPreferences } from '../../utils/preferences.js';
-import { timelineObject } from '../../utils/react_props.js';
+import { notePropsObjects, timelineObject } from '../../utils/react_props.js';
 import { buildSvg } from '../../utils/remixicon.js';
 import { apiFetch, navigate } from '../../utils/tumblr_helpers.js';
 import { userBlogNames, userBlogs } from '../../utils/user.js';
 
 const storageKey = 'quote_replies.draftLocation';
 const buttonClass = 'xkit-quote-replies';
-const meatballButtonId = 'quote-replies';
+const activityButtonClass = 'xkit-quote-replies-activity';
 const dropdownButtonClass = 'xkit-quote-replies-dropdown';
 
 // Remove outdated elements when loading module
@@ -22,14 +21,17 @@ $(`.${buttonClass}`).remove();
 
 export const styleElement = buildStyle(`
 button.xkit-quote-replies {
+  align-items: center;
+  cursor: pointer;
+}
+
+button.xkit-quote-replies-activity {
   position: relative;
   align-self: center;
   transform: translateY(-2px);
 
   align-items: center;
   margin: 0 6px;
-
-  cursor: pointer;
 }
 
 button.xkit-quote-replies svg {
@@ -51,12 +53,12 @@ button.xkit-quote-replies-dropdown {
 }
 
 @media (hover: hover) {
-  button.xkit-quote-replies svg {
+  button.xkit-quote-replies-activity svg {
     opacity: 0;
     transform: scale(0);
   }
 
-  ${notificationSelector}:is(:hover, :focus-within) button.xkit-quote-replies svg {
+  ${notificationSelector}:is(:hover, :focus-within) button.xkit-quote-replies-activity svg {
     opacity: 1;
     transform: scale(1);
   }
@@ -89,7 +91,7 @@ const processNotifications = notifications => notifications.forEach(async notifi
   activityElement.after(dom(
     'button',
     {
-      class: `${buttonClass} ${notification.matches(dropdownSelector) ? dropdownButtonClass : ''}`,
+      class: `${buttonClass} ${activityButtonClass} ${notification.matches(dropdownSelector) ? dropdownButtonClass : ''}`,
       [displayInlineFlexUnlessDisabledAttr]: '',
       title: 'Quote this reply',
     },
@@ -97,6 +99,33 @@ const processNotifications = notifications => notifications.forEach(async notifi
       click () {
         this.disabled = true;
         quoteActivityReply(tumblelogName, notificationProps)
+          .catch(showErrorModal)
+          .finally(() => { this.disabled = false; });
+      },
+    },
+    [buildSvg('ri-chat-quote-line')],
+  ));
+});
+
+const processNoteReplyButtons = replyCountButtons => replyCountButtons.forEach(async replyCountButton => {
+  const notePropsData = await notePropsObjects(replyCountButton);
+  const noteReplyType = determineNoteReplyType(notePropsData);
+
+  if (!noteReplyType) return;
+
+  const timelineObjectData = await timelineObject(replyCountButton);
+
+  replyCountButton.parentElement.append(dom(
+    'button',
+    {
+      class: buttonClass,
+      [displayInlineFlexUnlessDisabledAttr]: '',
+      title: 'Quote this reply',
+    },
+    {
+      click () {
+        this.disabled = true;
+        quoteNoteReply({ notePropsData, noteReplyType, timelineObjectData })
           .catch(showErrorModal)
           .finally(() => { this.disabled = false; });
       },
@@ -237,16 +266,16 @@ const determineNoteReplyType = ({ noteProps, parentNoteProps }) => {
   return false;
 };
 
-const quoteNoteReply = async ({ currentTarget }) => {
+const quoteNoteReply = async ({ notePropsData, noteReplyType, timelineObjectData }) => {
   const {
     noteProps: {
       note: { blogName: replyingBlogName, content: replyContent },
     },
-  } = currentTarget.__notePropsData;
+  } = notePropsData;
 
-  const { type, targetBlogName } = determineNoteReplyType(currentTarget.__notePropsData);
+  const { type, targetBlogName } = noteReplyType;
 
-  const { summary: targetPostSummary, postUrl: targetPostUrl } = await timelineObject(currentTarget.closest(keyToCss('meatballMenu')));
+  const { summary: targetPostSummary, postUrl: targetPostUrl } = timelineObjectData;
   const replyingBlogUuid = await apiFetch(`/v2/blog/${replyingBlogName}/info?fields[blogs]=uuid`)
     .then(({ response: { blog: { uuid } } }) => uuid);
 
@@ -279,13 +308,7 @@ export const main = async function () {
   ({ tagReplyingBlog, newTab } = await getPreferences('quote_replies'));
 
   pageModifications.register(notificationSelector, processNotifications);
-
-  registerReplyMeatballItem({
-    id: meatballButtonId,
-    label: 'Quote this reply',
-    notePropsFilter: notePropsData => Boolean(determineNoteReplyType(notePropsData)),
-    onclick: event => quoteNoteReply(event).catch(showErrorModal),
-  });
+  pageModifications.register(`${keyToCss('replyCountButton')}:has(use[href="#managed-icon__ds-reply-outline-16"])`, processNoteReplyButtons);
 
   const { [storageKey]: draftLocation } = await browser.storage.local.get(storageKey);
   browser.storage.local.remove(storageKey);
@@ -297,7 +320,7 @@ export const main = async function () {
 
 export const clean = async function () {
   pageModifications.unregister(processNotifications);
-  unregisterReplyMeatballItem(meatballButtonId);
+  pageModifications.unregister(processNoteReplyButtons);
 
   $(`.${buttonClass}`).remove();
 };
