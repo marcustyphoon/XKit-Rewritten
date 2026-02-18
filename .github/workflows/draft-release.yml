@@ -45,7 +45,8 @@ jobs:
           fetch-depth: 0
 
       - name: Create release notes
-        run: dev/release-notes.sh
+        id: release-notes
+        run: dev/release-notes.js >> release-notes.md
 
       - name: Create Github release draft
         id: create-draft
