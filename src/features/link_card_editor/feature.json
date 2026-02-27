@@ -1,0 +1,9 @@
+{
+  "title": "Link Card Editor",
+  "description": "Edit link cards in posts",
+  "icon": {
+    "class_name": "ri-link-unlink-m",
+    "color": "white",
+    "background_color": "#000000"
+  }
+}
