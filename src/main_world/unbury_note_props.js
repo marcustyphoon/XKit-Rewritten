@@ -3,16 +3,12 @@ export default function unburyNoteProps () {
   const reactKey = Object.keys(noteElement).find(key => key.startsWith('__reactFiber'));
   let fiber = noteElement[reactKey];
 
-  const resultsByReplyId = {};
   while (fiber !== null) {
     const props = fiber.memoizedProps || {};
-    if (typeof props?.note?.replyId === 'string') {
-      // multiple sets of props correspond to each replyId;
-      // prefer the last set, as it contains the most information
-      resultsByReplyId[props.note.replyId] = props;
+    // requiring rootReplyId ensures that we return the same props signature on parent and child replies
+    if (props.rootReplyId && props.note?.replyId) {
+      return props;
     }
     fiber = fiber.return;
   }
-  const [noteProps, parentNoteProps] = Object.values(resultsByReplyId);
-  return { noteProps, parentNoteProps };
 }

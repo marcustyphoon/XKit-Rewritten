@@ -6,7 +6,7 @@ import { showErrorModal } from '../../utils/modals.js';
 import { pageModifications } from '../../utils/mutations.js';
 import { notify } from '../../utils/notifications.js';
 import { getPreferences } from '../../utils/preferences.js';
-import { notePropsObjects, timelineObject } from '../../utils/react_props.js';
+import { notePropsObject, timelineObject } from '../../utils/react_props.js';
 import { buildSvg } from '../../utils/remixicon.js';
 import { apiFetch, navigate } from '../../utils/tumblr_helpers.js';
 import { userBlogNames, userBlogs } from '../../utils/user.js';
@@ -106,9 +106,12 @@ const processNotifications = notifications => notifications.forEach(async notifi
 });
 
 const processNoteReplyButtons = noteReplyButtons => noteReplyButtons.forEach(async noteReplyButton => {
-  const notePropsData = await notePropsObjects(noteReplyButton);
-  const noteReplyType = determineNoteReplyType(notePropsData);
+  const noteProps = await notePropsObject(noteReplyButton);
 
+  const parentNoteElement = noteReplyButton.closest(keyToCss('threadedRepliesWrapper'))?.previousElementSibling;
+  const parentNoteProps = parentNoteElement ? await notePropsObject(parentNoteElement) : undefined;
+
+  const noteReplyType = determineNoteReplyType({ noteProps, parentNoteProps });
   if (!noteReplyType) return;
 
   const timelineObjectData = await timelineObject(noteReplyButton);
@@ -123,7 +126,7 @@ const processNoteReplyButtons = noteReplyButtons => noteReplyButtons.forEach(asy
     {
       click () {
         this.disabled = true;
-        quoteNoteReply({ notePropsData, noteReplyType, timelineObjectData })
+        quoteNoteReply({ noteProps, noteReplyType, timelineObjectData })
           .catch(showErrorModal)
           .finally(() => { this.disabled = false; });
       },
@@ -264,12 +267,8 @@ const determineNoteReplyType = ({ noteProps, parentNoteProps }) => {
   return false;
 };
 
-const quoteNoteReply = async ({ notePropsData, noteReplyType, timelineObjectData }) => {
-  const {
-    noteProps: {
-      note: { blogName: replyingBlogName, content: replyContent },
-    },
-  } = notePropsData;
+const quoteNoteReply = async ({ noteProps, noteReplyType, timelineObjectData }) => {
+  const { note: { blogName: replyingBlogName, content: replyContent } } = noteProps;
 
   const { type, targetBlogName } = noteReplyType;
 
