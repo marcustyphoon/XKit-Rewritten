@@ -13,8 +13,6 @@ import { userBlogNames, userBlogs } from '../../utils/user.js';
 
 const storageKey = 'quote_replies.draftLocation';
 const buttonClass = 'xkit-quote-replies';
-const notificationButtonClass = 'xkit-quote-replies-notification';
-const notificationDropdownButtonClass = 'xkit-quote-replies-notification-dropdown';
 
 // Remove outdated elements when loading module
 $(`.${buttonClass}`).remove();
@@ -25,7 +23,7 @@ button.xkit-quote-replies {
   cursor: pointer;
 }
 
-button.xkit-quote-replies-notification {
+button.xkit-quote-replies.in-notification {
   position: relative;
   align-self: center;
   transform: translateY(-2px);
@@ -45,18 +43,18 @@ button.xkit-quote-replies:disabled svg {
   transition-property: none;
 }
 
-button.xkit-quote-replies-notification-dropdown {
+button.xkit-quote-replies.in-notification-dropdown {
   align-self: flex-start;
   margin: 10px 0 0;
 }
 
 @media (hover: hover) {
-  button.xkit-quote-replies-notification svg {
+  button.xkit-quote-replies.in-notification svg {
     opacity: 0;
     transform: scale(0);
   }
 
-  ${notificationSelector}:is(:hover, :focus-within) button.xkit-quote-replies-notification svg {
+  ${notificationSelector}:is(:hover, :focus-within) button.xkit-quote-replies.in-notification svg {
     opacity: 1;
     transform: scale(1);
   }
@@ -89,7 +87,7 @@ const processNotifications = notifications => notifications.forEach(async notifi
   activityElement.after(dom(
     'button',
     {
-      class: `${buttonClass} ${notificationButtonClass} ${notification.matches(dropdownSelector) ? notificationDropdownButtonClass : ''}`,
+      class: `${buttonClass} in-notification ${notification.matches(dropdownSelector) ? 'in-notification-dropdown' : ''}`,
       [displayInlineFlexUnlessDisabledAttr]: '',
       title: 'Quote this reply',
     },
