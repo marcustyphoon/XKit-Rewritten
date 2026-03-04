@@ -2,7 +2,7 @@ import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
 import { inject } from '../../utils/inject.js';
 import { buildStyle, displayInlineFlexUnlessDisabledAttr, notificationSelector } from '../../utils/interface.js';
-import { showErrorModal } from '../../utils/modals.js';
+import { hideModal, modalCancelButton, showErrorModal, showModal } from '../../utils/modals.js';
 import { pageModifications } from '../../utils/mutations.js';
 import { notify } from '../../utils/notifications.js';
 import { getPreferences } from '../../utils/preferences.js';
@@ -67,6 +67,7 @@ const activitySelector = `:is(${keyToCss('notification')} > ${keyToCss('activity
 
 const dropdownSelector = '[role="tabpanel"] *';
 
+let mode;
 let originalPostTag;
 let tagReplyingBlog;
 let newTab;
@@ -94,9 +95,8 @@ const processNotifications = notifications => notifications.forEach(async notifi
     {
       click () {
         this.disabled = true;
-        quoteNotificationReply(tumblelogName, notificationProps)
-          .catch(showErrorModal)
-          .finally(() => { this.disabled = false; });
+        setTimeout(() => { this.disabled = false; }, 1000);
+        quoteNotificationReply(tumblelogName, notificationProps).catch(showErrorModal);
       },
     },
     [buildSvg('ri-chat-quote-line')],
@@ -131,9 +131,8 @@ const processNoteReplyButtons = noteReplyButtons => noteReplyButtons.forEach(asy
     {
       click () {
         this.disabled = true;
-        quoteNoteReply({ noteData, noteReplyType, timelineObjectData })
-          .catch(showErrorModal)
-          .finally(() => { this.disabled = false; });
+        setTimeout(() => { this.disabled = false; }, 1000);
+        quoteNoteReply({ noteData, noteReplyType, timelineObjectData }).catch(showErrorModal);
       },
     },
     [buildSvg('ri-chat-quote-line')],
@@ -174,11 +173,17 @@ const quoteNoteReply = async ({ noteData, noteReplyType, timelineObjectData }) =
 
   const { type, targetBlogName } = noteReplyType;
 
-  const { summary: targetPostSummary, postUrl: targetPostUrl } = timelineObjectData;
+  const {
+    summary: targetPostSummary,
+    postUrl: targetPostUrl,
+    blogName: targetTumblelogName,
+    id: targetPostId,
+  } = timelineObjectData;
+
   const replyingBlogUuid = await apiFetch(`/v2/blog/${replyingBlogName}/info?fields[blogs]=uuid`)
     .then(({ response: { blog: { uuid } } }) => uuid);
 
-  const data = createReplyData({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent });
+  const data = await createReplyData({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent, targetTumblelogName, targetPostId });
   openPostDraft(targetBlogName, data);
 };
 
@@ -205,6 +210,8 @@ const createGenericNotificationReplyData = async (notificationProps) => {
     console.error(exception);
     console.debug('[XKit] Falling back to generic quote content due to fetch/parse failure');
   }
+
+  // Generic quote content fallback code. Always creates a new post; there is no way to find the root post to create a reblog of it.
 
   const replyingBlog = titleContent.formatting.find(({ type }) => type === 'mention').blog;
 
@@ -249,10 +256,75 @@ const createNotificationReplyData = async ({ type, timestamp, targetPostId, targ
   const { content: replyContent, blog: { name: replyingBlogName, uuid: replyingBlogUuid } } = reply;
   const targetPostUrl = `https://${targetTumblelogName}.tumblr.com/post/${targetPostId}`;
 
-  return createReplyData({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent });
+  return createReplyData({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent, targetTumblelogName, targetPostId });
 };
 
-const createReplyData = ({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent }) => {
+const createReplyData = async ({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent, targetTumblelogName, targetPostId }) => {
+  const newPostReplyData = createNewPost({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent });
+  if (mode === 'new post') return newPostReplyData;
+
+  try {
+    const {
+      response: { blog, canReblog, id: parentPostId, blog: { uuid: parentTumblelogUUID }, reblogKey },
+    } = await apiFetch(`/v2/blog/${targetTumblelogName}/posts/${targetPostId}`);
+
+    if (canReblog !== false && !blog?.isPasswordProtected) {
+      const reblogReplyData = createReblog({ replyingBlogName, replyingBlogUuid, replyContent, parentPostId, parentTumblelogUUID, reblogKey });
+      return mode === 'ask'
+        ? new Promise(resolve => showModal({
+          title: 'Quote Replies',
+          message: ['Would you like to reply in a reblog of the root post or in a new post?'],
+          buttons: [
+            modalCancelButton,
+            dom('button', { class: 'blue' }, {
+              click () {
+                hideModal();
+                resolve(reblogReplyData);
+              },
+            }, ['Reblog']),
+            dom('button', { class: 'blue' }, {
+              click () {
+                hideModal();
+                resolve(newPostReplyData);
+              },
+            }, ['New post']),
+          ],
+        }))
+        : reblogReplyData;
+    }
+  } catch {}
+  return new Promise(resolve => showModal({
+    title: 'Quote Replies',
+    message: ['The root post cannot be reblogged, but you can reply in a new post.'],
+    buttons: [
+      modalCancelButton,
+      dom('button', { class: 'blue' }, {
+        click () {
+          hideModal();
+          resolve(newPostReplyData);
+        },
+      }, ['Reply in a new post']),
+    ],
+  }));
+};
+
+const createReblog = async ({ replyingBlogName, replyingBlogUuid, replyContent, parentPostId, parentTumblelogUUID, reblogKey }) => {
+  const text = `@${replyingBlogName} replied:`;
+  const formatting = [
+    { start: 0, end: replyingBlogName.length + 1, type: 'mention', blog: { uuid: replyingBlogUuid } },
+  ];
+
+  const content = [
+    { type: 'text', text, formatting },
+    Object.assign(replyContent[0], { subtype: 'indented' }),
+    { type: 'text', text: '\u200B' },
+  ];
+  const tags = tagReplyingBlog ? replyingBlogName : '';
+
+  return { content, tags, parent_post_id: parentPostId, parent_tumblelog_uuid: parentTumblelogUUID, reblog_key: reblogKey };
+};
+
+const createNewPost = ({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent }) => {
   const verbiage = {
     reply: 'replied to your post',
     reply_to_comment: 'replied to you in a post',
@@ -299,7 +371,7 @@ const openPostDraft = async (tumblelogName, data) => {
 
 export const main = async function () {
   ({ [originalPostTagStorageKey]: originalPostTag } = await browser.storage.local.get(originalPostTagStorageKey));
-  ({ tagReplyingBlog, newTab } = await getPreferences('quote_replies'));
+  ({ mode, tagReplyingBlog, newTab } = await getPreferences('quote_replies'));
 
   pageModifications.register(notificationSelector, processNotifications);
   pageModifications.register(`${keyToCss('replyCountButton')}:has(use[href="#managed-icon__ds-reply-outline-16"])`, processNoteReplyButtons);
@@ -325,6 +397,6 @@ export const onStorageChanged = async function (changes) {
   }
 
   if (Object.keys(changes).some(key => key.startsWith('quote_replies.preferences'))) {
-    ({ tagReplyingBlog, newTab } = await getPreferences('quote_replies'));
+    ({ mode, tagReplyingBlog, newTab } = await getPreferences('quote_replies'));
   }
 };
