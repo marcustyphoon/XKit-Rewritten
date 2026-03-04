@@ -8,6 +8,16 @@
   },
   "help": "https://github.com/AprilSylph/XKit-Rewritten/wiki/Features#quote-replies",
   "preferences": {
+    "mode": {
+      "type": "select",
+      "label": "Reply in:",
+      "options": [
+        { "value": "new post", "label": "A new post" },
+        { "value": "reblog", "label": "A reblog of the root post" },
+        { "value": "ask", "label": "Ask me every time" }
+      ],
+      "default": "new post"
+    },
     "tagReplyingBlog": {
       "type": "checkbox",
       "label": "Automatically tag the quoted user",
