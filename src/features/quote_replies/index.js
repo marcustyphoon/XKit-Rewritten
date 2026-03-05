@@ -211,7 +211,7 @@ const createGenericNotificationReplyData = async (notificationProps) => {
     console.debug('[XKit] Falling back to generic quote content due to fetch/parse failure');
   }
 
-  // generic quote content fallback code. this always replies as a new post; there is no way to find the root post to create a reblog of it.
+  // generic quote content fallback code. this always replies as a new post; there is no way to find the source post to create a reblog of it.
 
   const replyingBlog = titleContent.formatting.find(({ type }) => type === 'mention').blog;
 
@@ -260,6 +260,65 @@ const createNotificationReplyData = async ({ type, timestamp, targetPostId, targ
 };
 
 const createReplyData = async ({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent, targetTumblelogName, targetPostId }) => {
+  const options = [{
+    label: 'New post',
+    data: createNewPostReply({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent }),
+  }];
+
+  if (mode === 'new post') return options[0].data;
+
+  try {
+    const { response: postData } = await apiFetch(`/v2/blog/${targetTumblelogName}/posts/${targetPostId}`);
+    const isReblog = postData.parentPostId && postData.parentTumblelogUuid;
+    options.push({
+      label: isReblog ? 'Reblog (with trail)' : 'Reblog',
+      data: createReblogReply({ replyingBlogName, replyingBlogUuid, replyContent, postData }),
+    });
+
+    if (isReblog) {
+      const { response: rootPostData } = await apiFetch(`/v2/blog/${postData.parentTumblelogUuid}/posts/${postData.parentPostId}`);
+      options.splice(1, 0, {
+        label: 'Reblog (root post)',
+        data: createReblogReply({ replyingBlogName, replyingBlogUuid, replyContent, postData: rootPostData }),
+      });
+    }
+  } catch (exception) {
+    console.error(exception);
+  }
+
+  if (mode === 'reblog' && options.length === 2) return options[1];
+
+  if (options.length === 1) {
+    return new Promise(resolve => showModal({
+      title: 'Quote Replies',
+      message: ['The source post cannot be reblogged, so Quote Replies will reply in a new post.'],
+      buttons: [
+        modalCancelButton,
+        dom('button', { class: 'blue' }, {
+          click () {
+            hideModal();
+            resolve(options[0]);
+          },
+        }, ['Continue']),
+      ],
+    }));
+  }
+
+  return new Promise(resolve => showModal({
+    title: 'Quote Replies',
+    message: ['Where would you like to reply?'],
+    buttons: options.map(({ label, data }) =>
+      dom('button', { class: 'blue' }, {
+        click () {
+          hideModal();
+          resolve(data);
+        },
+      }, [label]),
+    ),
+  }));
+};
+
+const createNewPostReply = ({ type, replyingBlogName, replyingBlogUuid, targetPostSummary, targetPostUrl, replyContent }) => {
   const verbiage = {
     reply: 'replied to your post',
     reply_to_comment: 'replied to you in a post',
@@ -281,65 +340,27 @@ const createReplyData = async ({ type, replyingBlogName, replyingBlogUuid, targe
     ...tagReplyingBlog ? [replyingBlogName] : [],
   ].join(',');
 
-  const newPostReplyData = { content, tags };
-  if (mode === 'new post') return newPostReplyData;
+  return { content, tags };
+};
 
-  try {
-    const {
-      response: { canReblog, id: parentPostId, postUrl, blog: { isPasswordProtected, uuid: parentTumblelogUUID }, reblogKey },
-    } = await apiFetch(`/v2/blog/${targetTumblelogName}/posts/${targetPostId}`);
-    const rootPostIsRebloggable = canReblog !== false && !isPasswordProtected;
+const createReblogReply = ({ replyingBlogName, replyingBlogUuid, replyContent, postData }) => {
+  const { canReblog, id: parentPostId, blog: { isPasswordProtected, uuid: parentTumblelogUUID }, reblogKey } = postData;
+  if (canReblog === false || isPasswordProtected) return;
 
-    if (rootPostIsRebloggable) {
-      // omit post summary when replying in a reblog; the post itself is right there!
-      const text = `@${replyingBlogName} replied:`;
-      const formatting = [
-        { start: 0, end: replyingBlogName.length + 1, type: 'mention', blog: { uuid: replyingBlogUuid } },
-      ];
+  // omit post summary when replying in a reblog; the post itself is right there!
+  const text = `@${replyingBlogName} replied:`;
+  const formatting = [
+    { start: 0, end: replyingBlogName.length + 1, type: 'mention', blog: { uuid: replyingBlogUuid } },
+  ];
 
-      const content = [
-        { type: 'text', text, formatting },
-        Object.assign(replyContent[0], { subtype: 'indented' }),
-        { type: 'text', text: '\u200B' },
-      ];
-      const tags = tagReplyingBlog ? replyingBlogName : '';
+  const content = [
+    { type: 'text', text, formatting },
+    Object.assign(replyContent[0], { subtype: 'indented' }),
+    { type: 'text', text: '\u200B' },
+  ];
+  const tags = tagReplyingBlog ? replyingBlogName : '';
 
-      const reblogReplyData = { content, tags, parent_post_id: parentPostId, parent_tumblelog_uuid: parentTumblelogUUID, reblog_key: reblogKey };
-      if (mode === 'reblog') return reblogReplyData;
-
-      return new Promise(resolve => showModal({
-        title: 'Quote Replies',
-        message: [`Would you like to quote ${replyingBlogName}'s reply in a new post or in a reblog of `, dom('a', { target: '_blank', href: postUrl }, null, `${targetTumblelogName}'s root post`), '?'],
-        buttons: [
-          dom('button', { class: 'blue' }, {
-            click () {
-              hideModal();
-              resolve(newPostReplyData);
-            },
-          }, ['New post']),
-          dom('button', { class: 'blue' }, {
-            click () {
-              hideModal();
-              resolve(reblogReplyData);
-            },
-          }, ['Reblog']),
-        ],
-      }));
-    }
-  } catch {}
-  return new Promise(resolve => showModal({
-    title: 'Quote Replies',
-    message: ['The root post cannot be reblogged, so Quote Replies will reply in a new post.'],
-    buttons: [
-      modalCancelButton,
-      dom('button', { class: 'blue' }, {
-        click () {
-          hideModal();
-          resolve(newPostReplyData);
-        },
-      }, ['Continue']),
-    ],
-  }));
+  return { content, tags, parent_post_id: parentPostId, parent_tumblelog_uuid: parentTumblelogUUID, reblog_key: reblogKey };
 };
 
 const openPostDraft = async (tumblelogName, data) => {

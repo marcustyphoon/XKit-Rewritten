@@ -13,7 +13,7 @@
       "label": "Reply in:",
       "options": [
         { "value": "new post", "label": "A new post" },
-        { "value": "reblog", "label": "A reblog of the root post" },
+        { "value": "reblog", "label": "A reblog of the source post" },
         { "value": "ask", "label": "Ask me every time" }
       ],
       "default": "new post"
