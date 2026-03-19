@@ -302,7 +302,7 @@ export const main = async function () {
   ({ tagReplyingBlog, newTab } = await getPreferences('quote_replies'));
 
   pageModifications.register(notificationSelector, processNotifications);
-  pageModifications.register(`${keyToCss('replyCountButton')}:has(use[href="#managed-icon__ds-reply-outline-16"])`, processNoteReplyButtons);
+  pageModifications.register(`${keyToCss('replyCountButton')}:has(use[href="#managed-icon__ds-reply-outline-16"]):not(${keyToCss('reblog')} *)`, processNoteReplyButtons);
 
   const { [storageKey]: draftLocation } = await browser.storage.local.get(storageKey);
   browser.storage.local.remove(storageKey);
