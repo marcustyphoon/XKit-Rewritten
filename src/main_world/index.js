@@ -1,11 +1,8 @@
 const moduleCache = {};
 
-window.removeXKitListener?.();
+const key = new URL(import.meta.url).searchParams.get('key');
 
-const controller = new AbortController();
-window.removeXKitListener = () => controller.abort();
-
-document.documentElement.addEventListener('xkit-injection-request', async event => {
+document.documentElement.addEventListener(`xkit-injection-request-${key}`, async event => {
   const { detail, target } = event;
   const { id, path, args } = JSON.parse(detail);
 
@@ -19,16 +16,16 @@ document.documentElement.addEventListener('xkit-injection-request', async event 
 
     if (result instanceof Element) {
       result.dispatchEvent(
-        new CustomEvent('xkit-injection-element-response', { detail: JSON.stringify({ id }), bubbles: true }),
+        new CustomEvent(`xkit-injection-element-response-${key}`, { detail: JSON.stringify({ id }), bubbles: true }),
       );
     } else {
       document.documentElement.dispatchEvent(
-        new CustomEvent('xkit-injection-response', { detail: JSON.stringify({ id, result }) }),
+        new CustomEvent(`xkit-injection-response-${key}`, { detail: JSON.stringify({ id, result }) }),
       );
     }
   } catch (exception) {
     target.dispatchEvent(
-      new CustomEvent('xkit-injection-response', {
+      new CustomEvent(`xkit-injection-response-${key}`, {
         detail: JSON.stringify({
           id,
           exception: {
@@ -41,6 +38,6 @@ document.documentElement.addEventListener('xkit-injection-request', async event 
       }),
     );
   }
-}, { signal: controller.signal });
+});
 
-document.documentElement.dispatchEvent(new CustomEvent('xkit-injection-ready'));
+document.documentElement.dispatchEvent(new CustomEvent(`xkit-injection-ready-${key}`));

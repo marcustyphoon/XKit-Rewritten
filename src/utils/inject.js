@@ -1,3 +1,17 @@
+const key = Date.now();
+
+await new Promise(resolve => {
+  document.documentElement.addEventListener(`xkit-injection-ready-${key}`, resolve, { once: true });
+
+  const { nonce } = [...document.scripts].find(script => script.getAttributeNames().includes('nonce'));
+  const script = Object.assign(document.createElement('script'), {
+    type: 'module',
+    nonce,
+    src: browser.runtime.getURL(`/main_world/index.js?key=${key}`),
+  });
+  document.documentElement.append(script);
+});
+
 /**
  * Runs a function in the page's "main" execution environment and returns
  * its result. This permits access to variables exposed by the Tumblr web
@@ -17,8 +31,8 @@ export const inject = (path, args = [], target = document.documentElement) =>
       const { id, result, exception } = JSON.parse(detail);
       if (id !== requestId) return;
 
-      document.documentElement.removeEventListener('xkit-injection-response', responseHandler);
-      document.documentElement.removeEventListener('xkit-injection-element-response', responseHandler);
+      document.documentElement.removeEventListener(`xkit-injection-response-${key}`, responseHandler);
+      document.documentElement.removeEventListener(`xkit-injection-element-response-${key}`, responseHandler);
 
       if (exception) {
         reject(exception);
@@ -28,10 +42,10 @@ export const inject = (path, args = [], target = document.documentElement) =>
         resolve(result);
       }
     };
-    document.documentElement.addEventListener('xkit-injection-response', responseHandler);
-    document.documentElement.addEventListener('xkit-injection-element-response', responseHandler);
+    document.documentElement.addEventListener(`xkit-injection-response-${key}`, responseHandler);
+    document.documentElement.addEventListener(`xkit-injection-element-response-${key}`, responseHandler);
 
     target.dispatchEvent(
-      new CustomEvent('xkit-injection-request', { detail: JSON.stringify(data), bubbles: true }),
+      new CustomEvent(`xkit-injection-request-${key}`, { detail: JSON.stringify(data), bubbles: true }),
     );
   });
