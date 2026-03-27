@@ -7,12 +7,23 @@
   --search-highlight: 226, 247, 255;
 
   /* Acorn Tokens */
+  --color-accent-primary: #0062f9;
+  --color-accent-primary-hover: #0053cb;
+  --color-accent-primary-active: #0041a4;
   --card-background-color: #ffffff;
   --card-box-shadow:
     0 0.25px 0.75px rgba(0, 0, 0, 0.05),
     0 2px 6px rgba(0, 0, 0, 0.1);
   --background-color-canvas: #ffffff;
+  --background-color-critical: #ffe8ea;
+  --background-color-success: #e1ffe1;
   --border-color: #bfbfc9;
+  --border-color-deemphasized: #bac2ca;
+  --border-color-interactive: #8f8f9d;
+  --message-bar-border-color-error: #cf174833;
+  --message-bar-border-color-success: #008e0033;
+  --input-text-background-color: #ffffff;
+  --input-text-color: #000000;
   --button-background-color: #eeeeef;
   --button-background-color-hover: #dededf;
   --button-background-color-active: #cdcdcf;
@@ -20,9 +31,13 @@
   --button-background-color-destructive-hover: #b20037;
   --button-background-color-destructive-active: #90002b;
   --text-color: #15141a;
+  --text-color-error: #b20037;
+  --button-text-color-primary: #ffffff;
   --button-text-color-destructive: #ffffff;
   --focus-outline: 2px solid #0062f9;
+  --icon-color-success: #008e00;
   --icon-color-warning: #b16a00;
+  --icon-color-critical: #cf1748;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,12 +50,23 @@
     --search-highlight: 0, 49, 126;
 
     /* Acorn Tokens */
+    --color-accent-primary: #00cadb;
+    --color-accent-primary-hover: #62dce9;
+    --color-accent-primary-active: #a6ecf4;
     --card-background-color: #23222b;
     --card-box-shadow:
       0 0.25px 0.75px rgba(0, 0, 0, 0.2),
       0 2px 6px rgba(0, 0, 0, 0.4);
     --background-color-canvas: #1c1b22;
+    --background-color-critical: #6e001f;
+    --background-color-success: #004800;
     --border-color: #5b5b66;
+    --border-color-deemphasized: #5b5b66;
+    --border-color-interactive: #bfbfc9;
+    --message-bar-border-color-error: #ffa0aa33;
+    --message-bar-border-color-success: #8adf8d33;
+    --input-text-background-color: #2b2a33;
+    --input-text-color: #fbfbfe;
     --button-background-color: #2c2b31;
     --button-background-color-hover: #3b3a41;
     --button-background-color-active: #4b4a50;
@@ -48,9 +74,13 @@
     --button-background-color-destructive-hover: #ffa0aa;
     --button-background-color-destructive-active: #ffc3c9;
     --text-color: #fbfbfe;
+    --text-color-error: #ffa0aa;
+    --button-text-color-primary: #15141a;
     --button-text-color-destructive: #15141a;
     --focus-outline: 2px solid #00cadb;
+    --icon-color-success: #8adf8d;
     --icon-color-warning: #f5cc58;
+    --icon-color-critical: #ffa0aa;
   }
 }
 
@@ -210,7 +240,7 @@ select:focus {
 dialog {
   border: none;
   border-radius: 8px;
-  padding: 16px;
+  padding: 15px;
 
   background-color: var(--card-background-color);
   box-shadow: var(--card-box-shadow);
@@ -218,22 +248,59 @@ dialog {
   font-size: 15px;
 }
 
-dialog fieldset {
+[role="alert"] {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  column-gap: 7.5px;
+  padding-block: 7.5px;
+  padding-inline: 11.25px 7.5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+
+  color: var(--text-color);
+}
+
+[role="alert"][hidden] {
+  display: none;
+}
+
+[role="alert"] > * {
+  min-height: 32px;
+  padding-block: 6.75px;
+}
+
+[role="alert"].success {
+  border-color: var(--message-bar-border-color-success);
+  background-color: var(--background-color-success);
+}
+
+[role="alert"].error {
+  border-color: var(--message-bar-border-color-error);
+  background-color: var(--background-color-critical);
+}
+
+form {
+  margin-block-start: 7.5px;
+}
+
+fieldset {
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
-  column-gap: 8px;
+  column-gap: 7.5px;
   padding: 0;
   border: none;
   margin: 0;
 }
 
-dialog button {
+button[type] {
   display: inline-block;
   min-height: 32px;
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 4px 16px;
+  padding: 3.75px 15px;
 
   background-color: var(--button-background-color);
   color: var(--text-color);
@@ -241,34 +308,90 @@ dialog button {
   font-weight: 600;
 }
 
-dialog button:hover {
+button[type]:disabled {
+  opacity: 50%;
+}
+
+button[type]:enabled:hover {
   background-color: var(--button-background-color-hover);
 }
 
-dialog button:hover:active {
+button[type]:enabled:hover:active {
   background-color: var(--button-background-color-active);
 }
 
-dialog button:focus-visible {
+button[type]:focus-visible {
   outline: var(--focus-outline);
   outline-offset: 2px;
 }
 
-dialog button.destructive {
+button[type].primary {
+  background-color: var(--color-accent-primary);
+  color: var(--button-text-color-primary);
+}
+
+button[type].primary:enabled:hover {
+  background-color: var(--color-accent-primary-hover);
+}
+
+button[type].primary:enabled:hover:active {
+  background-color: var(--color-accent-primary-active);
+}
+
+button[type].destructive {
   background-color: var(--button-background-color-destructive);
   color: var(--button-text-color-destructive);
 }
 
-dialog button.destructive:hover {
+button[type].destructive:enabled:hover {
   background-color: var(--button-background-color-destructive-hover);
 }
 
-dialog button.destructive:hover:active {
+button[type].destructive:enabled:hover:active {
   background-color: var(--button-background-color-destructive-active);
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
 }
 
 h4 {
   margin-block: 8px;
+}
+
+textarea {
+  display: block;
+  min-height: 32px;
+  width: 100%;
+  padding: 7.5px 11.25px;
+  border: 1px solid var(--border-color-interactive);
+  border-radius: 8px;
+  margin-block-start: 3.75px;
+
+  background-color: var(--input-text-background-color);
+  color: var(--input-text-color);
+  overflow: auto;
+  scrollbar-color: var(--border-color-deemphasized) transparent;
+  scrollbar-width: thin;
+  white-space: pre;
+}
+
+textarea:focus-visible {
+  outline: var(--focus-outline);
 }
 
 ul {
