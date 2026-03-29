@@ -7,7 +7,10 @@ const getCssMapKeys = async () => {
     await fetch('https://www.tumblr.com/').then(response => response.text()),
   )[0];
   const cssMap = await fetch(cssMapUrl).then(response => response.json());
-  return new Set(Object.keys(cssMap));
+  return {
+    all: new Set(Object.keys(cssMap)),
+    long: new Set(Object.keys(cssMap).filter(key => cssMap[key].length > 10)),
+  };
 };
 
 const getUsedCssKeys = async () => {
@@ -26,11 +29,19 @@ const getUsedCssKeys = async () => {
 };
 
 Promise.all([getCssMapKeys(), getUsedCssKeys()]).then(([cssMapKeys, usedCssKeys]) => {
-  const invalidCssKeys = usedCssKeys.difference(cssMapKeys);
+  const invalidCssKeys = usedCssKeys.difference(cssMapKeys.all);
   if (invalidCssKeys.size) {
     console.log('keyToCss is called with outdated/invalid key arguments:');
     invalidCssKeys.forEach(key => console.log('-', key));
   } else {
     console.log('all keyToCss keys are valid!');
+  }
+
+  const longCssKeys = usedCssKeys.intersection(cssMapKeys.long);
+  if (longCssKeys.size) {
+    console.log('keyToCss is called with long key arguments:');
+    longCssKeys.forEach(key => console.log('-', key));
+  } else {
+    console.log('all keyToCss keys are short!');
   }
 });
