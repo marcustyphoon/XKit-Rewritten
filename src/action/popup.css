@@ -1,63 +1,87 @@
 :root {
-  --in-content-button-background: #9da6af54;
-  --in-content-button-background-hover: #9da6afa8;
-  --in-content-button-background-active: #9da6af;
-  --in-content-primary-button-background: #0061e0;
-  --in-content-primary-button-background-hover: #0250bb;
-  --in-content-primary-button-background-active: #053e94;
-  --in-content-box-info-background: #f0f0f4;
-
   --black: 21, 20, 25;
   --white: 255, 255, 255;
   --accent: 10, 132, 255;
   --passive-grey: 223, 223, 229;
   --active-grey: 207, 207, 216;
-
   --search-highlight: 255, 233, 0;
+
+  /* Acorn Tokens */
+  --card-background-color: #ffffff;
+  --card-box-shadow:
+    0 0.25px 0.75px rgba(0, 0, 0, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.1);
+  --button-background-color: #eeeeef;
+  --button-background-color-hover: #dededf;
+  --button-background-color-active: #cdcdcf;
+  --button-background-color-destructive: #cf1748;
+  --button-background-color-destructive-hover: #b20037;
+  --button-background-color-destructive-active: #90002b;
+  --text-color: #15141a;
+  --button-text-color-destructive: #ffffff;
+  --focus-outline: 2px solid #0062f9;
+  --icon-color-warning: #b16a00;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --in-content-button-background: #2b2a33;
-    --in-content-button-background-hover: #52525e;
-    --in-content-button-background-active: #5b5b66;
-    --in-content-primary-button-background: #00ddff;
-    --in-content-primary-button-background-hover: #80ebff;
-    --in-content-primary-button-background-active: #aaf2ff;
-    --in-content-box-info-background: #36353e;
-
     --black: 251, 251, 254;
     --white: 66, 65, 77;
     --accent: 54, 213, 255;
     --passive-grey: 83, 83, 94;
     --active-grey: 91, 91, 102;
-
     --search-highlight: 0, 62, 170;
+
+    /* Acorn Tokens */
+    --card-background-color: #23222b;
+    --card-box-shadow:
+      0 0.25px 0.75px rgba(0, 0, 0, 0.2),
+      0 2px 6px rgba(0, 0, 0, 0.4);
+    --button-background-color: #2c2b31;
+    --button-background-color-hover: #3b3a41;
+    --button-background-color-active: #4b4a50;
+    --button-background-color-destructive: #ff7e8e;
+    --button-background-color-destructive-hover: #ffa0aa;
+    --button-background-color-destructive-active: #ffc3c9;
+    --text-color: #fbfbfe;
+    --button-text-color-destructive: #15141a;
+    --focus-outline: 2px solid #00cadb;
+    --icon-color-warning: #f5cc58;
   }
 }
 
-html {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  overflow-y: scroll;
+::backdrop {
+  background-color: #00000080;
+}
 
+html {
   font-size: 14px;
+  overflow-y: scroll;
   scrollbar-color: rgb(var(--active-grey)) rgb(var(--white));
 }
 
-html, main {
+html, body, main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   width: 375px;
   min-width: 100%;
   max-width: 100%;
 }
 
 body {
+  min-height: 100vh;
+
   background-color: rgb(var(--white));
   color: rgb(var(--black));
   font: inherit;
   -webkit-user-select: none;
   user-select: none;
+}
+
+main {
+  flex-grow: 1;
+  flex-shrink: 0;
 }
 
 #permissions-banner,
@@ -88,57 +112,66 @@ body {
   display: none;
 }
 
-nav {
+[role="tablist"] {
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  flex: 0;
   padding: 8px 4px;
   border-bottom: 1px solid rgb(var(--active-grey));
 }
 
-nav a {
+[role="tablist"] [role="tab"] {
   flex-grow: 1;
   padding: 8px;
+  border: none;
   border-radius: 5px;
   margin: 0 4px;
 
+  background-color: transparent;
   color: rgb(var(--black));
   font-weight: bold;
   text-align: center;
   text-decoration: none;
 }
 
-nav a:hover {
+[role="tablist"] [role="tab"]:hover {
   background-color: rgb(var(--passive-grey));
+  cursor: pointer;
 }
 
-nav a:active, nav a.selected {
+[role="tablist"] [role="tab"]:active,
+[role="tablist"] [role="tab"][aria-selected="true"] {
   background-color: rgb(var(--active-grey));
 }
 
-section:not(.open) {
-  display: none;
+[role="tabpanel"] {
+  position: relative;
+  flex-grow: 1;
+  flex-shrink: 0;
 }
 
-section.open:empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1em 0;
+[role="tabpanel"]:focus-visible {
+  outline-offset: -3px;
 }
 
-section.open:empty::before {
-  content: "No one’s around to help.";
-}
+[role="tabpanel"]:focus-visible::after {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
 
-section h2 {
-  text-align: center;
+  content: "";
+  outline: inherit;
+  outline-offset: inherit;
+  pointer-events: none;
 }
 
 input[type="text"],
-select,
-textarea {
+select {
   padding: 4px;
   border: none;
   border-radius: 3px;
@@ -149,7 +182,7 @@ textarea {
 
 ::placeholder {
   color: inherit;
-  opacity: .55;
+  opacity: 0.55;
 }
 
 input[type="text"] {
@@ -162,13 +195,86 @@ select:focus {
   background-color: rgb(var(--active-grey));
 }
 
-textarea {
-  resize: none;
-  width: 100%;
+dialog {
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+
+  background-color: var(--card-background-color);
+  box-shadow: var(--card-box-shadow);
+  color: var(--text-color);
+  font-size: 15px;
 }
 
-textarea,
-pre {
-  scrollbar-color: rgba(var(--black), 0.5) rgb(var(--passive-grey));
-  scrollbar-width: thin;
+dialog fieldset {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  column-gap: 8px;
+  padding: 0;
+  border: none;
+  margin: 0;
+}
+
+dialog button {
+  display: inline-block;
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px 16px;
+
+  background-color: var(--button-background-color);
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+dialog button:hover {
+  background-color: var(--button-background-color-hover);
+}
+
+dialog button:hover:active {
+  background-color: var(--button-background-color-active);
+}
+
+dialog button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}
+
+dialog button.destructive {
+  background-color: var(--button-background-color-destructive);
+  color: var(--button-text-color-destructive);
+}
+
+dialog button.destructive:hover {
+  background-color: var(--button-background-color-destructive-hover);
+}
+
+dialog button.destructive:hover:active {
+  background-color: var(--button-background-color-destructive-active);
+}
+
+h4 {
+  margin-block: 8px;
+}
+
+ul {
+  padding-inline-start: 16px;
+  padding-inline-end: 0;
+}
+
+.acorn-icons {
+  display: inline-flex;
+  vertical-align: bottom;
+  margin: 0;
+}
+
+.acorn-icons svg {
+  height: 1.15em;
+  width: 1.15em;
+}
+
+.clr-picker {
+  width: 210px;
 }

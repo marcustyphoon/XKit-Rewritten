@@ -1,28 +1,36 @@
-const localExportDisplayElement = document.getElementById('local-storage-export');
-const localCopyButton = document.getElementById('copy-local');
-const localDownloadButton = document.getElementById('download-local');
+const exportForm = document.getElementById('export');
+const exportValueTextarea = document.getElementById('export-value');
+const exportCopyButton = document.getElementById('export-copy');
+const exportDownloadButton = document.getElementById('export-download');
 
-const localImportTextarea = document.getElementById('local-storage-import');
-const localRestoreButton = document.getElementById('restore-local');
+const importForm = document.getElementById('import');
+const importValueTextarea = document.getElementById('import-value');
+const importSubmitButton = document.getElementById('import-submit');
+
+const overwriteConfirmationDialog = document.getElementById('overwrite-confirmation');
+const overwriteSizeOldSpan = document.getElementById('overwrite-size-old');
+const overwriteSizeNewSpan = document.getElementById('overwrite-size-new');
+const overwriteCancelButton = document.getElementById('overwrite-cancel');
+const overwriteConfirmButton = document.getElementById('overwrite-confirm');
 
 const sleep = ms => new Promise(resolve => setTimeout(() => resolve(), ms));
 
-const updateLocalExportDisplay = async function () {
-  const storageLocal = await browser.storage.local.get();
-  const stringifiedStorage = JSON.stringify(storageLocal, null, 2);
+class UserInterrupt extends Error { name = 'UserInterrupt'; }
 
-  localExportDisplayElement.textContent = stringifiedStorage;
+const onStorageChanged = async function () {
+  const storageLocal = await browser.storage.local.get();
+  exportValueTextarea.value = JSON.stringify(storageLocal, null, 2);
 };
 
-const localCopy = async function () {
-  if (localCopyButton.classList.contains('copied')) { return; }
+const localCopy = () => {
+  if (exportCopyButton.classList.contains('copied')) { return; }
 
-  navigator.clipboard.writeText(localExportDisplayElement.textContent).then(async () => {
-    localCopyButton.classList.add('copied');
+  navigator.clipboard.writeText(exportValueTextarea.value).then(async () => {
+    exportCopyButton.classList.add('copied');
     await sleep(2000);
-    localCopyButton.classList.add('fading');
+    exportCopyButton.classList.add('fading');
     await sleep(1000);
-    localCopyButton.classList.remove('copied', 'fading');
+    exportCopyButton.classList.remove('copied', 'fading');
   });
 };
 
@@ -51,48 +59,92 @@ const localExport = async function () {
   URL.revokeObjectURL(blobUrl);
 };
 
-const localRestore = async function () {
-  const importText = localImportTextarea.value;
+/** @type {(event: SubmitEvent) => void} */
+function onExportSubmit (event) {
+  event.preventDefault();
+  if (event.submitter === exportCopyButton) localCopy();
+  if (event.submitter === exportDownloadButton) localExport();
+}
 
-  try {
-    localRestoreButton.disabled = true;
-
-    const parsedStorage = JSON.parse(importText);
-    await browser.storage.local.set(parsedStorage);
-
-    localRestoreButton.classList.add('success');
-    localRestoreButton.textContent = 'Successfully restored!';
-    localImportTextarea.value = '';
-    document.querySelector('a[href="#configuration"]').classList.add('outdated');
-  } catch (exception) {
-    localRestoreButton.classList.add('failure');
-    localRestoreButton.textContent =
-      exception instanceof SyntaxError ? 'Failed to parse backup contents!' : 'Failed to restore!';
-    console.error(exception);
-  } finally {
-    await sleep(3000);
-    localRestoreButton.disabled = false;
-    localRestoreButton.classList.remove('success', 'failure');
-    localRestoreButton.textContent = '';
-  }
+const getByteLength = (value) => {
+  const textEncoder = new TextEncoder();
+  const { byteLength } = textEncoder.encode(JSON.stringify(value, null, 2));
+  return byteLength;
 };
 
+const unitFormat = new Intl.NumberFormat('en-GB', {
+  style: 'unit',
+  unit: 'kilobyte',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const showOverwriteConfirmationDialog = (currentStorage, parsedStorage) => new Promise((resolve, reject) => {
+  overwriteConfirmationDialog.showModal();
+
+  overwriteSizeOldSpan.textContent = unitFormat.format(getByteLength(currentStorage) / 1024);
+  overwriteSizeNewSpan.textContent = unitFormat.format(getByteLength(parsedStorage) / 1024);
+
+  overwriteCancelButton.addEventListener('click', () => {
+    overwriteConfirmationDialog.close();
+    reject(new UserInterrupt());
+  });
+
+  overwriteConfirmButton.addEventListener('click', () => {
+    overwriteConfirmationDialog.close();
+    resolve();
+  });
+});
+
+/** @type {(event: SubmitEvent) => Promise<void>} */
+async function onImportSubmit (event) {
+  event.preventDefault();
+
+  const importText = importValueTextarea.value;
+
+  try {
+    importSubmitButton.disabled = true;
+
+    const currentStorage = await browser.storage.local.get();
+    const parsedStorage = JSON.parse(importText);
+
+    if (Object.keys(currentStorage).length !== 0) {
+      await showOverwriteConfirmationDialog(currentStorage, parsedStorage);
+    }
+
+    await browser.storage.local.clear();
+    await browser.storage.local.set(parsedStorage);
+
+    importSubmitButton.classList.add('success');
+    importSubmitButton.textContent = 'Successfully restored!';
+    importValueTextarea.value = '';
+    document.getElementById('configuration-tab').classList.add('outdated');
+
+    await sleep(3000);
+  } catch (exception) {
+    if (!(exception instanceof UserInterrupt)) {
+      console.error(exception);
+
+      importSubmitButton.classList.add('failure');
+      importSubmitButton.textContent = exception instanceof SyntaxError
+        ? 'Failed to parse backup contents!'
+        : 'Could not restore backup!';
+
+      await sleep(3000);
+    }
+  } finally {
+    importSubmitButton.disabled = false;
+    importSubmitButton.classList.remove('success', 'failure');
+    importSubmitButton.textContent = 'Restore';
+  }
+}
+
 const renderLocalBackup = async function () {
-  updateLocalExportDisplay();
-  browser.storage.local.onChanged.addListener(updateLocalExportDisplay);
+  onStorageChanged();
+  browser.storage.local.onChanged.addListener(onStorageChanged);
 
-  localCopyButton.addEventListener('click', localCopy);
-  localDownloadButton.addEventListener('click', localExport);
-
-  localRestoreButton.addEventListener('click', localRestore);
+  exportForm.addEventListener('submit', onExportSubmit);
+  importForm.addEventListener('submit', onImportSubmit);
 };
 
 renderLocalBackup();
-
-document.querySelectorAll('#backup details').forEach(details => details.addEventListener('toggle', ({ currentTarget }) => {
-  if (currentTarget.open) {
-    [...currentTarget.parentNode.children]
-      .filter(element => element !== currentTarget)
-      .forEach(sibling => { sibling.open = false; });
-  }
-}));
