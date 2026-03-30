@@ -202,8 +202,8 @@ const processPostOptionBundleClick = function ({ target }) {
 };
 
 const processPosts = postElements => filterPostElements(postElements).forEach(async postElement => {
-  const { state, canEdit } = await timelineObject(postElement);
-  if (canEdit && ['ask', 'submission'].includes(state) === false) {
+  const { state } = await timelineObject(postElement);
+  if (['ask', 'submission'].includes(state) === false) {
     const clonedControlButton = cloneControlButton(controlButtonTemplate, { click: togglePopupDisplay });
     insertControlButton(postElement, clonedControlButton, buttonClass);
   }
