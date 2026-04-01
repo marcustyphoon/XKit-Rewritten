@@ -23,6 +23,29 @@
   display: none;
   justify-content: center;
   align-items: center;
+  height: 100vw;
+
+  font-size: 15px;
+  font-weight: normal;
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1px;
+  border-radius: 8px;
+  margin: 8px;
+  overflow: hidden;
+
+  background-color: var(--border-color);
+  outline: 1px solid var(--border-color);
+  outline-offset: 0;
+}
+
+.features:empty {
+  background-color: transparent;
+  margin: 0;
+  outline: none;
 }
 
 .features:empty::before {
@@ -31,13 +54,8 @@
   align-items: center;
   height: 100vw;
 
-  color: rgb(var(--active-grey));
+  color: var(--text-color-deemphasized);
   content: "Loading…";
-  font-size: 1.133rem;
-  font-weight: bold;
-}
-
-xkit-feature.search-hidden,
-xkit-feature.filter-hidden {
-  display: none;
+  font-size: 17px;
+  font-weight: 600;
 }
