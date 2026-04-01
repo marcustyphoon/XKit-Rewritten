@@ -100,9 +100,8 @@
 }
 
 html {
-  font-size: 14px;
+  font-size: 15px;
   overflow-y: scroll;
-  scrollbar-color: rgb(var(--active-grey)) rgb(var(--white));
 }
 
 html, body, main {
@@ -131,7 +130,7 @@ main {
 
 #permissions-banner,
 #embedded-banner {
-  margin: 8px;
+  margin: 7.5px;
 }
 
 #permissions-banner:not([hidden]) + #embedded-banner {
@@ -141,9 +140,9 @@ main {
 [role="tablist"] {
   display: flex;
   flex-direction: row;
-  column-gap: 8px;
+  column-gap: 7.5px;
   flex: 0;
-  padding: 8px;
+  padding: 7.5px;
   border-bottom: 1px solid var(--border-color);
 
   background-color: var(--background-color-canvas);
@@ -187,7 +186,8 @@ main {
 }
 
 [role="tabpanel"]:focus-visible {
-  outline-offset: -3px;
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: -2px;
 }
 
 [role="tabpanel"]:focus-visible::after {
@@ -224,7 +224,6 @@ input[type="search"] {
   background-repeat: no-repeat;
   background-size: 12px;
   color: var(--input-text-color);
-  font-size: 15px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -282,7 +281,6 @@ dialog {
   background-color: var(--card-background-color);
   box-shadow: var(--card-box-shadow);
   color: var(--text-color);
-  font-size: 15px;
 }
 
 :is([role="alert"], [role="status"]) {
@@ -298,7 +296,6 @@ dialog {
 
   background-color: var(--background-color-information);
   color: var(--text-color);
-  font-size: 15px;
 }
 
 :is([role="alert"], [role="status"])[hidden] {
@@ -467,7 +464,7 @@ textarea:focus-visible {
 }
 
 ul {
-  padding-inline-start: 16px;
+  padding-inline-start: 15px;
   padding-inline-end: 0;
 }
 
