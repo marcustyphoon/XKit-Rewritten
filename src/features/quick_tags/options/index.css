@@ -4,7 +4,7 @@ html {
 }
 
 body {
-  padding: 3.75px;
+  padding: var(--space-xsmall);
 
   -webkit-user-select: none;
   user-select: none;
@@ -12,11 +12,11 @@ body {
 
 section,
 fieldset {
-  margin-block-start: 15px;
+  margin-block-start: var(--space-large);
 }
 
 input + label {
-  margin-block-start: 7.5px;
+  margin-block-start: var(--space-small);
 }
 
 #bundles {
@@ -98,6 +98,6 @@ input + label {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
-  column-gap: 3.75px;
+  column-gap: var(--space-xsmall);
   align-items: center;
 }

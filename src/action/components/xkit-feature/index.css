@@ -25,8 +25,8 @@ summary {
   flex-direction: row;
   justify-content: flex-start;
   align-items: flex-start;
-  column-gap: 7.5px;
-  padding: 11.25px;
+  column-gap: var(--space-small);
+  padding: var(--space-medium);
 
   cursor: pointer;
 }
@@ -184,7 +184,7 @@ summary:focus-visible {
 
 #badge ::slotted(span) {
   width: fit-content;
-  padding-inline: 3.75px;
+  padding-inline: var(--space-xsmall);
   border: 1px solid var(--badge-border-color-filled);
   border-radius: 4px;
 
@@ -203,21 +203,21 @@ summary:focus-visible {
 }
 
 slot[name="preferences"] p {
-  margin-block-start: 7.5px;
-  margin-block-end: 11.25px;
+  margin-block-start: var(--space-small);
+  margin-block-end: var(--space-medium);
 
   text-align: center;
 }
 
 ::slotted([slot="preferences"]) {
-  padding-inline: 11.25px;
-  margin-block-start: 7.5px;
-  margin-block-end: 15px;
+  padding-inline: var(--space-medium);
+  margin-block-start: var(--space-small);
+  margin-block-end: var(--space-large);
 }
 
 ::slotted(.search-highlighted) {
   background-color: var(--background-color-search-highlight);
   box-shadow:
-    0 -7.5px 0 var(--background-color-search-highlight),
-    0 7.5px 0 var(--background-color-search-highlight);
+    0 calc(-1 * var(--space-small)) 0 var(--background-color-search-highlight),
+    0 var(--space-small) 0 var(--background-color-search-highlight);
 }
