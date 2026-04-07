@@ -1,9 +1,16 @@
 import { Sortable } from '../../../lib/sortable.esm.js';
 
+/**
+ * @typedef TagBundle
+ * @property {string} title The display name of this tag bundle.
+ * @property {string} tags  The tags in this tag bundle (comma-separated).
+ */
+
 const storageKey = 'quick_tags.preferences.tagBundles';
 
 const bundlesList = document.getElementById('bundles');
 const bundleTemplate = document.getElementById('bundle-template');
+const editTemplate = document.getElementById('edit-template');
 
 const saveNewBundle = async event => {
   event.preventDefault();
@@ -24,47 +31,51 @@ const saveNewBundle = async event => {
   currentTarget.reset();
 };
 
-Sortable.create(bundlesList, {
-  dataIdAttr: 'id',
-  handle: '.drag-handle',
-  forceFallback: true,
-  store: {
-    set: async sortable => {
-      const { [storageKey]: tagBundles = [] } = await browser.storage.local.get(storageKey);
+/** @type {(event: PointerEvent) => Promise<void>} */
+async function onEditButtonClick ({ currentTarget }) {
+  const bundleId = currentTarget.closest('[id]')?.id;
+  if (!bundleId) return;
 
-      const order = sortable.toArray().map(Number);
-      const newTagBundles = order.map(i => tagBundles[i]);
+  /** @type {{ "quick_tags.preferences.tagBundles": TagBundle[] }} */
+  const { [storageKey]: tagBundles = [] } = await browser.storage.local.get(storageKey);
 
-      browser.storage.local.set({ [storageKey]: newTagBundles });
-    },
-  },
-});
+  const index = parseInt(bundleId, 10);
+  const tagBundle = tagBundles[index];
+  if (!tagBundle) return;
 
-const editTagBundle = async ({ currentTarget }) => {
-  const { parentNode: { parentNode } } = currentTarget;
-  const inputs = [...parentNode.querySelectorAll('input')];
+  const editTemplateClone = editTemplate.content.cloneNode(true);
 
-  if (currentTarget.title === 'Edit tag bundle') {
-    currentTarget.title = 'Save tag bundle';
-    currentTarget.firstElementChild.className = 'ri-save-3-fill';
-    inputs.forEach(input => { input.disabled = false; });
-  } else {
-    if (inputs.some(input => input.reportValidity() === false)) { return; }
-    currentTarget.title = 'Edit tag bundle';
-    currentTarget.firstElementChild.className = 'ri-pencil-line';
+  const editForm = editTemplateClone.getElementById('edit-form');
+  const editDialog = editTemplateClone.getElementById('edit-dialog');
+  const editCancelButton = editTemplateClone.getElementById('edit-cancel');
 
-    const { [storageKey]: tagBundles = [] } = await browser.storage.local.get(storageKey);
-    const index = parseInt(parentNode.id, 10);
-    const tagBundle = tagBundles[index];
+  Object.entries(tagBundle).forEach(([key, value]) => {
+    const formControlElement = editForm.elements.namedItem(key);
+    if (formControlElement) formControlElement.value = value;
+  });
 
-    for (const input of inputs) {
-      input.disabled = true;
-      tagBundle[input.className] = input.value;
+  /** @type {(event: SubmitEvent) => Promise<void>} */
+  const onEditSubmit = async (event) => {
+    event.preventDefault();
+    if (!editForm.reportValidity()) return;
+
+    const formData = new FormData(editForm);
+    for (const [key, value] of formData.entries()) {
+      tagBundle[key] = value;
     }
 
-    browser.storage.local.set({ [storageKey]: tagBundles });
-  }
-};
+    await browser.storage.local.set({ [storageKey]: tagBundles });
+
+    editDialog.close();
+  };
+
+  editForm.addEventListener('submit', onEditSubmit);
+  editDialog.addEventListener('close', () => editDialog.remove());
+  editCancelButton.addEventListener('click', () => editDialog.close());
+
+  document.body.append(editDialog);
+  editDialog.showModal();
+}
 
 const deleteBundle = async ({ currentTarget }) => {
   const { parentNode: { parentNode } } = currentTarget;
@@ -80,13 +91,17 @@ const renderBundles = async function () {
 
   bundlesList.replaceChildren(...tagBundles.map(({ title, tags }, index) => {
     const bundleTemplateClone = bundleTemplate.content.cloneNode(true);
-
     bundleTemplateClone.querySelector('.bundle').id = index;
 
-    bundleTemplateClone.querySelector('.title').value = title;
-    bundleTemplateClone.querySelector('.tags').value = tags;
+    const bundleLabel = bundleTemplateClone.querySelector('.label');
+    bundleLabel.textContent = title;
+    bundleLabel.title = bundleLabel.textContent;
 
-    bundleTemplateClone.querySelector('.edit').addEventListener('click', editTagBundle);
+    const bundleDescription = bundleTemplateClone.querySelector('.description');
+    bundleDescription.textContent = tags.split(',').map(tag => `#${tag.trim()}`).join(' ');
+    bundleDescription.title = bundleDescription.textContent;
+
+    bundleTemplateClone.querySelector('.edit').addEventListener('click', onEditButtonClick);
     bundleTemplateClone.querySelector('.delete').addEventListener('click', deleteBundle);
 
     return bundleTemplateClone;
@@ -102,3 +117,19 @@ browser.storage.local.onChanged.addListener((changes) => {
 document.getElementById('new-bundle').addEventListener('submit', saveNewBundle);
 
 renderBundles();
+
+Sortable.create(bundlesList, {
+  dataIdAttr: 'id',
+  handle: '.drag-handle',
+  forceFallback: true,
+  store: {
+    set: async sortable => {
+      const { [storageKey]: tagBundles = [] } = await browser.storage.local.get(storageKey);
+
+      const order = sortable.toArray().map(Number);
+      const newTagBundles = order.map(i => tagBundles[i]);
+
+      browser.storage.local.set({ [storageKey]: newTagBundles });
+    },
+  },
+});
