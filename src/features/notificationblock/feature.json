@@ -10,9 +10,8 @@
   "relatedTerms": [ "activity", "mute notifications", "notes" ],
   "preferences": {
     "manageBlockedPosts": {
-      "type": "iframe",
-      "label": "Manage posts with blocked notifications",
-      "src": "/features/notificationblock/options/index.html"
+      "type": "component",
+      "src": "/features/notificationblock/options/index.js"
     }
   }
 }
