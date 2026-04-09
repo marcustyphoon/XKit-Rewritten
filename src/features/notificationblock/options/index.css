@@ -32,7 +32,7 @@ code {
 
 #blocked-posts:empty::before {
   content: "You haven’t blocked notifications for any posts yet.";
-  margin-block: var(--space-large);
+  margin: var(--space-large);
 }
 
 h3 + #blocked-posts {
