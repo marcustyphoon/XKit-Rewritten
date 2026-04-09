@@ -1,6 +1,6 @@
 import { CustomElement, fetchStyleSheets } from '../../../action/components/index.js';
 
-const localName = 'postblock-blocked-posts';
+const localName = 'notificationblock-blocked-posts';
 
 const templateDocument = new DOMParser().parseFromString(`
   <template id="${localName}">
@@ -8,8 +8,8 @@ const templateDocument = new DOMParser().parseFromString(`
     <ul id="blocked-posts"></ul>
     <template id="blocked-post">
       <li class="blocked-post">
-        <code role="presentation"></code>
-        <button type="button" data-post-id="" title="Unblock this post">
+        <code role="presentation"><a target="_blank"></a></code>
+        <button type="button" data-post-id="" title="Unblock notifications for this post">
           <!-- https://mozilla.org/MPL/2.0/ | https://github.com/FirefoxUX/acorn-icons/blob/a0be4e8/icons/desktop/16/svg/delete-16.svg -->
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="var(--icon-color-critical)" aria-hidden="true">
             <path d="M7 12.5H5.5v-6H7zm3.5 0H9v-6h1.5z" />
@@ -20,8 +20,8 @@ const templateDocument = new DOMParser().parseFromString(`
     </template>
     <template id="unblock-template">
       <dialog id="unblock-dialog">
-        <h3>Unblock this post?</h3>
-        <p>All instances of post ID <code id="unblock-id" role="presentation"></code> (including reblogs) will become visible again.</p>
+        <h3>Unblock this post's notifications?</h3>
+        <p>Notifications for post ID <code id="unblock-id" role="presentation"></code> will appear in your activity feed again.</p>
         <fieldset>
           <button type="button" id="unblock-cancel">Cancel</button>
           <button type="button" id="unblock-confirm" class="destructive">Unblock</button>
@@ -37,9 +37,9 @@ const adoptedStyleSheets = await fetchStyleSheets([
   './index.css',
 ].map(import.meta.resolve));
 
-const storageKey = 'postblock.blockedPostRootIDs';
+const storageKey = 'notificationblock.blockedPostTargetIDs';
 
-class PostBlockBlockedPostsElement extends CustomElement {
+class NotificationBlockBlockedPostsElement extends CustomElement {
   /** @type {HTMLHeadingElement}  */ #postsBlockedCount;
   /** @type {HTMLUListElement}    */ #blockedPostList;
   /** @type {HTMLTemplateElement} */ #blockedPostTemplate;
@@ -58,7 +58,7 @@ class PostBlockBlockedPostsElement extends CustomElement {
     const { postId } = currentTarget.dataset;
     if (!postId) return;
 
-    const { [storageKey]: blockedPostRootIDs = [] } = await browser.storage.local.get(storageKey);
+    const { [storageKey]: blockedPostTargetIDs = [] } = await browser.storage.local.get(storageKey);
 
     const unblockTemplateClone = this.#unblockTemplate.content.cloneNode(true);
 
@@ -72,7 +72,7 @@ class PostBlockBlockedPostsElement extends CustomElement {
     unblockDialog.addEventListener('close', () => unblockDialog.remove());
     unblockCancelButton.addEventListener('click', () => unblockDialog.close());
     unblockConfirmButton.addEventListener('click', async () => {
-      browser.storage.local.set({ [storageKey]: blockedPostRootIDs.filter(id => id !== postId) });
+      browser.storage.local.set({ [storageKey]: blockedPostTargetIDs.filter(id => id !== postId) });
       unblockDialog.close();
     });
 
@@ -81,15 +81,16 @@ class PostBlockBlockedPostsElement extends CustomElement {
   };
 
   renderBlockedPosts = async () => {
-    const { [storageKey]: blockedPostRootIDs = [] } = await browser.storage.local.get(storageKey);
+    const { [storageKey]: blockedPostTargetIDs = [] } = await browser.storage.local.get(storageKey);
 
-    this.#postsBlockedCount.textContent = `${blockedPostRootIDs.length} blocked ${blockedPostRootIDs.length === 1 ? 'post' : 'posts'}`;
-    this.#blockedPostList.replaceChildren(...blockedPostRootIDs.map(blockedPostID => {
+    this.#postsBlockedCount.textContent = `${blockedPostTargetIDs.length} ${blockedPostTargetIDs.length === 1 ? 'post' : 'posts'} with blocked notifications`;
+    this.#blockedPostList.replaceChildren(...blockedPostTargetIDs.map(blockedPostID => {
       const templateClone = this.#blockedPostTemplate.content.cloneNode(true);
-      const codeElement = templateClone.querySelector('code');
+      const anchorElement = templateClone.querySelector('a');
       const unblockButton = templateClone.querySelector('button');
 
-      codeElement.textContent = blockedPostID;
+      anchorElement.textContent = blockedPostID;
+      anchorElement.href = `https://www.tumblr.com/?xkit-notificationblock-open-post-id=${blockedPostID}`;
       unblockButton.dataset.postId = blockedPostID;
       unblockButton.addEventListener('click', this.unblockPost);
 
@@ -104,7 +105,7 @@ class PostBlockBlockedPostsElement extends CustomElement {
   };
 
   connectedCallback () {
-    this.ariaLabel ||= 'Manage blocked posts';
+    this.ariaLabel ||= 'Manage posts with blocked notifications';
     this.role ||= 'listitem';
     this.slot ||= 'preferences';
 
@@ -113,6 +114,6 @@ class PostBlockBlockedPostsElement extends CustomElement {
   }
 }
 
-customElements.define(localName, PostBlockBlockedPostsElement);
+customElements.define(localName, NotificationBlockBlockedPostsElement);
 
 export default () => document.createElement(localName);
