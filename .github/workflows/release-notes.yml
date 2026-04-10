@@ -20,8 +20,13 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          cache: true
+
       - name: Generate release notes
-        run: dev/release-notes.js >> $GITHUB_STEP_SUMMARY
+        run: deno run --allow-env --allow-run --allow-net dev/release-notes.ts >> $GITHUB_STEP_SUMMARY
         env:
           GITHUB_API_URL: ${{ github.api_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
