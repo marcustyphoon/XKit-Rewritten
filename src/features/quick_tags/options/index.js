@@ -269,6 +269,7 @@ class QuickTagsBundleManagementElement extends CustomElement {
       forceFallback: true,
       store: {
         set: async sortable => {
+          console.log('set', Math.random());
           const { [storageKey]: tagBundles = [] } = await browser.storage.local.get(storageKey);
 
           const order = sortable.toArray().map(Number);

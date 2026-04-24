@@ -102,6 +102,7 @@ const processPostForm = async function ([selectedTagsElement]) {
 
 export const onStorageChanged = async function (changes) {
   if (Object.keys(changes).some(key => key.startsWith('quick_tags'))) {
+    console.log('changed', changes);
     if (Object.keys(changes).includes(storageKey)) populatePopups();
 
     ({ originalPostTag, answerTag, autoTagAsker } = await getPreferences('quick_tags'));
