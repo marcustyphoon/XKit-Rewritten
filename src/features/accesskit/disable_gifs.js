@@ -6,7 +6,8 @@ import { pageModifications } from '../../utils/mutations.js';
 import { getPreferences } from '../../utils/preferences.js';
 
 const canvasClass = 'xkit-paused-gif-placeholder';
-const pausedPosterAttribute = 'data-paused-gif-use-poster';
+const pausedFigureAttribute = 'data-paused-gif-use-figure';
+const pausedFigureAspectRatioVar = '--xkit-paused-gif-figure-aspect-ratio';
 const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 const hoverContainerAttribute = 'data-paused-gif-hover-container';
 const labelAttribute = 'data-paused-gif-label';
@@ -64,7 +65,6 @@ export const styleElement = buildStyle(`
 .${canvasClass}${parentHovered},
 [${labelAttribute}="after"]${hovered}::after,
 [${labelAttribute}="before"]${hovered}::before,
-[${pausedPosterAttribute}]:not(${hovered}) > ${keyToCss('loader')} > ${keyToCss('knightRiderLoader')},
 [${labelAttribute}]:not(${hovered}) > ${keyToCss('loader')} > ${keyToCss('knightRiderLoader')} {
   display: none !important;
 }
@@ -74,14 +74,11 @@ ${keyToCss('background')}[${labelAttribute}="before"]::before {
   display: none;
 }
 
-[${pausedPosterAttribute}]:not(${hovered}) > img${keyToCss('poster')} {
-  visibility: visible !important;
+[${pausedFigureAttribute}]:not(${hovered}) > ${keyToCss('placeholder')} {
+  display: contents;
 }
-[${pausedPosterAttribute}="eager"]:not(${hovered}) > img:not(${keyToCss('poster')}) {
-  visibility: hidden !important;
-}
-[${pausedPosterAttribute}="lazy"]:not(${hovered}) > img:not(${keyToCss('poster')}) {
-  display: none;
+[${pausedFigureAttribute}]:not(${hovered}) {
+  aspect-ratio: var(${pausedFigureAspectRatioVar});
 }
 
 [style*="${pausedBackgroundImageVar}"]:not(${hovered}) {
@@ -198,10 +195,14 @@ const processGifs = function (gifElements) {
 
     gifElement.decoding = 'sync';
 
-    const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
-    if (posterElement) {
-      gifElement.parentElement.setAttribute(pausedPosterAttribute, loadingMode);
-      addLabel(posterElement);
+    if (loadingMode === 'lazy' && gifElement.matches(`figure > ${keyToCss('placeholder')}[style*="padding-bottom"] > *`)) {
+      const placeholderElement = gifElement.parentElement;
+      const figureElement = gifElement.parentElement.parentElement;
+
+      figureElement.setAttribute(pausedFigureAttribute, '');
+      figureElement.style.setProperty(pausedFigureAspectRatioVar, `100 / ${placeholderElement.style.paddingBottom.replace('%', '')}`);
+
+      addLabel(gifElement);
       return;
     }
 
@@ -333,7 +334,7 @@ export const clean = async function () {
   $(`.${canvasClass}`).remove();
   $(`[${labelAttribute}]`).removeAttr(labelAttribute);
   $(`[${labelSizeAttribute}]`).removeAttr(labelSizeAttribute);
-  $(`[${pausedPosterAttribute}]`).removeAttr(pausedPosterAttribute);
+  $(`[${pausedFigureAttribute}]`).removeAttr(pausedFigureAttribute);
   $(`[${hoverContainerAttribute}]`).removeAttr(hoverContainerAttribute);
   [...document.querySelectorAll(`[style*="${pausedBackgroundImageVar}"]`)]
     .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
