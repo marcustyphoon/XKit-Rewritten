@@ -122,6 +122,7 @@ const isAnimated = memoize(async sourceUrl => {
       preferAnimation: true,
     });
     await decoder.decode();
+    // console.log(sourceUrl, decoder.tracks.selectedTrack.animated);
     return decoder.tracks.selectedTrack.animated;
   } else {
     return !sourceUrl.endsWith('.webp');
@@ -167,8 +168,66 @@ const createPausedUrlIfAnimated = memoize(async sourceUrl => {
   return URL.createObjectURL(blob);
 });
 
+// const isNonAnimatedWebp = async gifElement => {
+//   console.log({ src: gifElement.currentSrc, button: gifElement.parentElement.querySelector(keyToCss('playButton')), outerHTML: gifElement.parentElement.outerHTML });
+//   if (gifElement.currentSrc.endsWith('.webp') === false) return false;
+
+//   // Technically this may be an incorrect condition; when Tumblr media autoplay is disabled, Tumblr may render
+//   // all webp images as if they were animated. We must accept Tumblr's inaccuracy in this case, as the next
+//   // condition can produce a false negative when Tumblr media autoplay is disabled by reading a paused
+//   // currentSrc value.
+//   if (gifElement.parentElement.querySelector(keyToCss('playButton'))) return false;
+
+//   if (await isAnimated(gifElement.currentSrc)) return false;
+//   return true;
+// };
+
+const waitForAnimatedWebp = gifElement => new Promise(resolve => {
+  isAnimated(gifElement.currentSrc).then(value => value && resolve());
+
+  const observer = new MutationObserver(async () => {
+    console.log('observed', gifElement);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (await isAnimated(gifElement.currentSrc)) {
+      console.log('observed TRUE', gifElement);
+      resolve();
+      observer.disconnect();
+    }
+  });
+  console.log('observing', gifElement);
+  observer.observe(gifElement, { attributeFilter: ['src', 'srcset'] });
+});
+
 const pauseGif = async function (gifElement) {
-  if (gifElement.currentSrc.endsWith('.webp') && !(await isAnimated(gifElement.currentSrc))) return;
+  if (gifElement.currentSrc.endsWith('.webp')) {
+    await waitForAnimatedWebp(gifElement);
+  }
+
+  // if (gifElement.currentSrc.endsWith('.webp')) {
+  //   if (!(await isAnimated(gifElement.currentSrc))) {
+  //     await new Promise(resolve => {
+  //       const observer = new MutationObserver(async () => {
+  //         console.log('observed', gifElement);
+  //         if (await isAnimated(gifElement.currentSrc)) {
+  //           console.log('observed TRUE', gifElement);
+  //           resolve();
+  //           observer.disconnect();
+  //         }
+  //       });
+  //       console.log('observing', gifElement);
+  //       observer.observe(gifElement, { attributeFilter: ['src', 'srcset'] });
+  //     });
+  //   }
+  // }
+
+  // if (await isNonAnimatedWebp(gifElement)) {
+  //   gifElement.dataset.notAnimatedWebp = '';
+  //   return;
+  // }
+
+  // console.log(pauseGif, gifElement.currentSrc, gifElement);
+
+  // if (gifElement.currentSrc.endsWith('.webp') && !(await isAnimated(gifElement.currentSrc))) return;
 
   const image = new Image();
   image.src = gifElement.currentSrc;
@@ -206,8 +265,10 @@ const processGifs = function (gifElements) {
     }
 
     if (gifElement.complete && gifElement.currentSrc) {
+      // console.log('pausing now', gifElement);
       pauseGif(gifElement);
     } else {
+      // console.log('pausing on load', gifElement);
       gifElement.onload = () => pauseGif(gifElement);
     }
   });
@@ -267,7 +328,31 @@ const onStorageChanged = async function (changes) {
   loadingMode = modeChanges.newValue;
 };
 
-const processNativeGifPlayButtons = buttons => buttons.forEach(button => button.click());
+const processNativeGifPlayButtons = buttons => buttons.forEach(button => {
+  // const gifElement = button.parentElement.querySelector(`img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})`);
+  // if (gifElement.currentSrc.endsWith('.webp')) {
+  //   console.log('clicking webp', gifElement);
+  //   const observer = new MutationObserver(() => {
+  //     console.log('observed webp', gifElement);
+  //     processGifs([gifElement]);
+  //     observer.disconnect();
+  //   });
+  //   observer.observe(gifElement, { attributeFilter: ['src', 'srcset'] });
+  // }
+  button.click();
+});
+
+// const processNativeGifPlayButtons = buttons => {
+//   buttons.forEach(button => button.click());
+//   const gifs = buttons
+//     .map(button =>
+//       button.parentElement.querySelector(`img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})`),
+//     )
+//     .filter(Boolean);
+//     observer
+//   console.log(gifs);
+//   setTimeout(() => processGifs(gifs), 100);
+// };
 
 export const main = async function () {
   ({ disable_gifs_loading_mode: loadingMode } = await getPreferences('accesskit'));
