@@ -17,25 +17,27 @@ const meatballButtonUnblockLabel = 'Unblock notifications';
 
 let blockedPostTargetIDs;
 
-const hiddenAttribute = 'data-notificationblock-hidden';
-const placeholdersClass = 'xkit-notificationblock-placeholder';
+let placeholders;
 
-const firstHidden = `[${hiddenAttribute}]:not([${hiddenAttribute}] + *)`;
-const firstHiddenOfDay = `[${hiddenAttribute}]:has(> ${keyToCss('dateSeparatorWrapper')})`;
+const hiddenAttribute = 'data-notificationblock-hidden';
+const placeholderAttribute = 'data-notificationblock-placeholder';
 
 export const styleElement = buildStyle(`
 [${hiddenAttribute}] > ${notificationSelector} {
   display: none !important;
 }
 
-body.${placeholdersClass} :is(${firstHidden}, ${firstHiddenOfDay})::after {
+[${placeholderAttribute}]::after {
   display: block;
   padding-bottom: 1ch;
 
-  content: "(hidden notifications)";
+  content: "(" attr(${placeholderAttribute}) " hidden notifications)";
   text-align: center;
   color: var(--content-fg-secondary);
   font-size: .875rem;
+}
+[${placeholderAttribute}="1"]::after {
+  content: "(1 hidden notification)";
 }
 `);
 
@@ -50,10 +52,21 @@ const processNotifications = (notificationElements) => {
 
       const rootId = targetRootPostId || targetPostId || blockablePostId;
 
-      notificationElement.parentElement.toggleAttribute(
-        hiddenAttribute,
-        blockedPostTargetIDs.includes(rootId),
-      );
+      if (Math.random() > 0.4 /* blockedPostTargetIDs.includes(rootId) */) {
+        const wrapper = notificationElement.parentElement;
+        wrapper.toggleAttribute(hiddenAttribute, true);
+
+        if (placeholders) {
+          if (wrapper.querySelector(keyToCss('dateSeparator'))) {
+            wrapper.setAttribute(placeholderAttribute, 1);
+          } else {
+            const previousWrapper = wrapper.previousElementSibling;
+            const previousWrapperCount = Number(previousWrapper?.getAttribute(placeholderAttribute) ?? 0);
+            wrapper.setAttribute(placeholderAttribute, previousWrapperCount + 1);
+            previousWrapper?.removeAttribute(placeholderAttribute);
+          }
+        }
+      }
     }
   });
 };
@@ -131,8 +144,7 @@ export const onStorageChanged = (changes) => {
 };
 
 export const main = async function () {
-  const { placeholders } = await getPreferences('notificationblock');
-  document.body.classList.toggle(placeholdersClass, !!placeholders);
+  ({ placeholders } = await getPreferences('notificationblock'));
 
   ({ [storageKey]: blockedPostTargetIDs = [] } = await browser.storage.local.get(storageKey));
   onNewNotifications.addListener(processNotifications);
@@ -147,5 +159,5 @@ export const clean = async function () {
   unregisterMeatballItem(meatballButtonUnblockId);
 
   $(`[${hiddenAttribute}]`).removeAttr(hiddenAttribute);
-  document.body.classList.remove(placeholdersClass);
+  $(`[${placeholderAttribute}]`).removeAttr(placeholderAttribute);
 };
