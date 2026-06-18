@@ -18,24 +18,25 @@ const meatballButtonUnblockLabel = 'Unblock notifications';
 let blockedPostTargetIDs;
 
 const hiddenAttribute = 'data-notificationblock-hidden';
+const hiddenCountAttribute = 'data-notificationblock-hidden-count';
 const placeholdersClass = 'xkit-notificationblock-placeholder';
-
-const firstHidden = `[${hiddenAttribute}]:not([${hiddenAttribute}] + *)`;
-const firstHiddenOfDay = `[${hiddenAttribute}]:has(> ${keyToCss('dateSeparatorWrapper')})`;
 
 export const styleElement = buildStyle(`
 [${hiddenAttribute}] > ${notificationSelector} {
   display: none !important;
 }
 
-body.${placeholdersClass} :is(${firstHidden}, ${firstHiddenOfDay})::after {
+body.${placeholdersClass} [${hiddenCountAttribute}]::after {
   display: block;
   padding-bottom: 1ch;
 
-  content: "(hidden notifications)";
+  content: "(" attr(${hiddenCountAttribute}) " hidden notifications)";
   text-align: center;
   color: var(--content-fg-secondary);
   font-size: .875rem;
+}
+body.${placeholdersClass} [${hiddenCountAttribute}="1"]::after {
+  content: "(1 hidden notification)";
 }
 `);
 
@@ -50,10 +51,23 @@ const processNotifications = (notificationElements) => {
 
       const rootId = targetRootPostId || targetPostId || blockablePostId;
 
-      notificationElement.parentElement.toggleAttribute(
-        hiddenAttribute,
-        blockedPostTargetIDs.includes(rootId),
-      );
+      const wrapper = notificationElement.parentElement;
+
+      if (Math.random() > 0.4 /* blockedPostTargetIDs.includes(rootId) */) {
+        wrapper.toggleAttribute(hiddenAttribute, true);
+
+        if (wrapper.querySelector(keyToCss('dateSeparator'))) {
+          wrapper.setAttribute(hiddenCountAttribute, 1);
+        } else {
+          const previousWrapper = wrapper.previousElementSibling;
+          const previousWrapperCount = Number(previousWrapper?.getAttribute(hiddenCountAttribute) ?? 0);
+          wrapper.setAttribute(hiddenCountAttribute, previousWrapperCount + 1);
+          previousWrapper?.removeAttribute(hiddenCountAttribute);
+        }
+      } else {
+        wrapper.removeAttribute(hiddenAttribute);
+        wrapper.removeAttribute(hiddenCountAttribute);
+      }
     }
   });
 };
@@ -147,5 +161,6 @@ export const clean = async function () {
   unregisterMeatballItem(meatballButtonUnblockId);
 
   $(`[${hiddenAttribute}]`).removeAttr(hiddenAttribute);
+  $(`[${hiddenCountAttribute}]`).removeAttr(hiddenCountAttribute);
   document.body.classList.remove(placeholdersClass);
 };
