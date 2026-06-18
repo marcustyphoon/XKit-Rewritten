@@ -20,22 +20,40 @@ let blockedPostTargetIDs;
 const hiddenAttribute = 'data-notificationblock-hidden';
 const placeholdersClass = 'xkit-notificationblock-placeholder';
 
+const hiddenCounter = 'notificationblock-hidden';
+
 const firstHidden = `[${hiddenAttribute}]:not([${hiddenAttribute}] + *)`;
-const firstHiddenOfDay = `[${hiddenAttribute}]:has(> ${keyToCss('dateSeparatorWrapper')})`;
+const firstHiddenOfDay = `[${hiddenAttribute}]:has(> ${keyToCss('dateSeparator')})`;
+
+const lastHidden = `[${hiddenAttribute}]:not(:has(+ [${hiddenAttribute}]))`;
+const lastHiddenOfDay = `[${hiddenAttribute}]:has(+ [${hiddenAttribute}] > ${keyToCss('dateSeparator')})`;
 
 export const styleElement = buildStyle(`
 [${hiddenAttribute}] > ${notificationSelector} {
   display: none !important;
 }
 
-body.${placeholdersClass} :is(${firstHidden}, ${firstHiddenOfDay})::after {
+body.${placeholdersClass} :is(${firstHidden}, ${firstHiddenOfDay}) {
+  counter-reset: ${hiddenCounter};
+}
+body.${placeholdersClass} [${hiddenAttribute}] {
+  counter-increment: ${hiddenCounter};
+}
+
+body.${placeholdersClass} [${hiddenAttribute}]:after {
   display: block;
   padding-bottom: 1ch;
 
-  content: "(hidden notifications)";
   text-align: center;
   color: var(--content-fg-secondary);
   font-size: .875rem;
+}
+
+body.${placeholdersClass} :is(${firstHidden}, ${firstHiddenOfDay}):is(${lastHidden}, ${lastHiddenOfDay})::after {
+  content: "(1 hidden notification)";
+}
+body.${placeholdersClass} [${hiddenAttribute}]:is(${lastHidden}, ${lastHiddenOfDay})::after {
+  content: "(" counter(${hiddenCounter}) " hidden notifications)";
 }
 `);
 
@@ -52,7 +70,7 @@ const processNotifications = (notificationElements) => {
 
       notificationElement.parentElement.toggleAttribute(
         hiddenAttribute,
-        blockedPostTargetIDs.includes(rootId),
+        Math.random() > 0.4, // blockedPostTargetIDs.includes(rootId),
       );
     }
   });
