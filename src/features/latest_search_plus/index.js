@@ -1,6 +1,6 @@
 import { keyToCss } from '../../utils/css_map.js';
 import { dom } from '../../utils/dom.js';
-import { buildStyle, postSelector } from '../../utils/interface.js';
+import { blogViewSelector, buildStyle, postSelector } from '../../utils/interface.js';
 import { hideModal, showModal } from '../../utils/modals.js';
 import { pageModifications } from '../../utils/mutations.js';
 import { addSidebarItem, removeSidebarItem } from '../../utils/sidebar.js';
@@ -149,7 +149,7 @@ const sidebarOptions = {
 };
 
 const stopBuggyScroll = event => {
-  if (['KeyJ', 'KeyK'].includes(event.code) && document.querySelector(`[${activeAttr}]`)) {
+  if (['KeyJ', 'KeyK'].includes(event.code) && document.querySelector(`[${activeAttr}]`) && document.querySelector(blogViewSelector) === null) {
     event.stopPropagation();
   }
 };
