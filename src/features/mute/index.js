@@ -1,6 +1,6 @@
 import { keyToCss } from '../../utils/css_map.js';
-import { button, div, form, input, label } from '../../utils/dom.js';
-import { controlsClass as hidePostsUtilControlsClass, createPostHideFunctions } from '../../utils/hide_posts.js';
+import { button, form, input, label } from '../../utils/dom.js';
+import { createPostHideFunctions } from '../../utils/hide_posts.js';
 import { buildStyle, filterPostElements, getTimelineItemWrapper, postSelector } from '../../utils/interface.js';
 import { registerBlogMeatballItem, registerMeatballItem, unregisterBlogMeatballItem, unregisterMeatballItem } from '../../utils/meatballs.js';
 import { hideModal, modalCancelButton, showModal } from '../../utils/modals.js';
@@ -19,7 +19,6 @@ import {
   timelineSelector,
 } from '../../utils/timeline_id.js';
 import { userBlogNames } from '../../utils/user.js';
-import { controlsClass as showOriginalsControlsClass } from '../show_originals/index.js';
 
 const meatballButtonId = 'mute';
 const meatballButtonLabel = data => `Mute options for ${data.name ?? getVisibleBlog(data).name}`;
@@ -30,22 +29,15 @@ const { hidePost, showPosts } = createPostHideFunctions({
     message: 'This post contains a muted blog.',
   },
 });
+let blogPostHideFunctions = {};
 
-const mutedBlogControlsHiddenAttribute = 'data-muted-blog-controls-hidden';
-const mutedBlogControlsAttribute = 'data-muted-blog-controls-mode';
 const lengthenedClass = 'xkit-mute-lengthened';
+const lengthenedPostClass = 'xkit-mute-lengthened-post';
 
 export const styleElement = buildStyle(`
-[${mutedBlogControlsAttribute}='original'] ~ div [${mutedBlogControlsHiddenAttribute}],
-[${mutedBlogControlsAttribute}='reblogged'] ~ div [${mutedBlogControlsHiddenAttribute}] {
-  content: linear-gradient(transparent, transparent);
-  height: 0;
-}
-
 /* Prevent endless post loading on timelines with all posts hidden by preserving post height */
-[${mutedBlogControlsAttribute}='all'] ~ div article,
-[${mutedBlogControlsAttribute}='all'] ~ div article :is(img, video, canvas) {
-  visibility: hidden !important;
+.${lengthenedPostClass} {
+  height: 400px !important;
 }
 
 .${lengthenedClass} {
@@ -84,18 +76,11 @@ const getNameAndUuid = async timelineElement => {
 };
 
 const processBlogTimelineElement = async timelineElement => {
-  const { name, uuid } = await getNameAndUuid(timelineElement);
+  const { uuid } = await getNameAndUuid(timelineElement);
   const mutedBlogMode = mutedBlogs[uuid];
 
   if (mutedBlogMode) {
     timelineElement.dataset.muteBlogUuid = uuid;
-
-    const mutedBlogControls = div({ class: hidePostsUtilControlsClass, [mutedBlogControlsAttribute]: mutedBlogMode }, [
-      `You have muted ${mutedBlogMode} posts from ${name}!`,
-      button({ click: () => mutedBlogControls.remove() }, [mutedBlogMode === 'all' ? 'Show posts' : 'Show all posts']),
-    ]);
-    timelineElement.prepend(mutedBlogControls);
-    timelineElement.querySelector(`.${showOriginalsControlsClass}`)?.after(mutedBlogControls);
   }
 };
 
@@ -122,7 +107,6 @@ const processTimelines = async timelineElements => {
     timelineElement.dataset.muteProcessedTimeline = timeline;
     timelineElement.dataset.muteProcessedTimelineId = timelineId;
 
-    [...timelineElement.querySelectorAll(`[${mutedBlogControlsAttribute}]`)].forEach(el => el.remove());
     delete timelineElement.dataset.muteBlogUuid;
 
     if (timelineFilter(timelineElement)) {
@@ -165,7 +149,19 @@ const processPosts = async function (postElements) {
       if (relevantBlogUuid === timelineBlogUuid) {
         // Posts hidden on blog timelines can be revealed by muted blog timeline controls
         // if and only if they are hidden because the current blog is muted.
-        getTimelineItemWrapper(postElement).toggleAttribute(mutedBlogControlsHiddenAttribute, true);
+
+        const mutedBlogMode = mutedBlogs[uuid];
+        blogPostHideFunctions[uuid] ??= createPostHideFunctions({
+          id: `mute-${blogNames[uuid]}`,
+          timelineControls: {
+            message: `You have muted ${mutedBlogMode} posts from ${name}!`,
+            buttonText: mutedBlogMode === 'all' ? 'Show posts' : 'Show all posts',
+          },
+        });
+        blogPostHideFunctions[uuid].hidePost(postElement);
+        if (mutedBlogMode === 'all') {
+          getTimelineItemWrapper(postElement)?.classList.add(lengthenedPostClass);
+        }
       } else {
         hidePost(postElement);
       }
@@ -309,9 +305,11 @@ export const main = async function () {
 
 const unprocess = () => {
   showPosts();
-  $(`[${mutedBlogControlsHiddenAttribute}]`).removeAttr(mutedBlogControlsHiddenAttribute);
+
+  Object.values(blogPostHideFunctions).forEach(({ showPosts }) => showPosts());
+  blogPostHideFunctions = {};
+
   $(`.${lengthenedClass}`).removeClass(lengthenedClass);
-  $(`[${mutedBlogControlsAttribute}]`).remove();
   $('[data-mute-processed-timeline]').removeAttr('data-mute-processed-timeline');
   $('[data-mute-processed-timeline-id]').removeAttr('data-mute-processed-timeline-id');
   $('[data-mute-blog-uuid]').removeAttr('data-mute-blog-uuid');
@@ -319,6 +317,7 @@ const unprocess = () => {
 
 export const clean = async function () {
   unprocess();
+
   unregisterMeatballItem(meatballButtonId);
   unregisterBlogMeatballItem(meatballButtonId);
   onNewPosts.removeListener(processPosts);

@@ -2,7 +2,7 @@ import { button, div } from './dom.js';
 import { buildStyle, getTimelineItemWrapper } from './interface.js';
 import { anyPostPermalinkTimelineFilter, timelineSelector } from './timeline_id.js';
 
-export const controlsClass = 'xkit-hidden-post-controls';
+const controlsClass = 'xkit-hidden-post-controls';
 
 // Remove outdated elements when loading module
 $(`.${controlsClass}`).remove();
@@ -76,15 +76,23 @@ document.documentElement.append(styleElement);
 /**
  * @typedef {object} PermalinkPageOptions
  * @property {string} message Message to display in permalink page controls (e.g. "This post contains a blocked blog!")
+ * @property {string} [buttonText] Label for the dismiss button. Default: "View post"
+ */
+
+/**
+ * @typedef {object} TimelineControlsOptions
+ * @property {string} message Message to display in timeline controls (e.g. "This blog contains hidden posts!")
+ * @property {string} [buttonText] Label for the dismiss button. Default: "View posts"
  */
 
 /**
  * @param {object} options Destructured
  * @param {string} options.id Identifier for this post hiding instance (must be unique)
  * @param {PermalinkPageOptions} [options.permalinkPageControls] If specified, single posts on permalink pages are hidden with an informative, dismissable UI
+ * @param {TimelineControlsOptions} [options.timelineControls] If specified, posts are hidden with an informative, dismissable UI
  * @returns {PostHideFunctions} Functions to hide/show posts
  */
-export const createPostHideFunctions = ({ id, permalinkPageControls }) => {
+export const createPostHideFunctions = ({ id, permalinkPageControls, timelineControls }) => {
   const hiddenAttribute = `data-xkit-${id}-hidden`;
 
   const controlledHiddenAttribute = `data-xkit-${id}-hidden-controlled`;
@@ -98,17 +106,17 @@ export const createPostHideFunctions = ({ id, permalinkPageControls }) => {
     }
   `;
 
-  const addPermalinkPageControls = (postElement, timelineElement) => {
+  const addControlsElement = (postElement, timelineElement, message, buttonText) => {
     const timelineItemWrapper = getTimelineItemWrapper(postElement);
-    if (timelineItemWrapper.getAttribute(controlledHiddenAttribute) !== '') {
-      timelineItemWrapper.setAttribute(controlledHiddenAttribute, '');
+    timelineItemWrapper.setAttribute(controlledHiddenAttribute, '');
 
-      const { message } = permalinkPageControls;
+    if (timelineElement.querySelector(`.${controlsClass}`) === null) {
       const controlsElement = div({ class: controlsClass, [controlsAttribute]: id }, [
         message,
-        button({ click: () => controlsElement.remove() }, ['View post']),
+        button({ click: () => controlsElement.remove() }, [buttonText]),
       ]);
       timelineElement.prepend(controlsElement);
+      timelineElement.querySelector('.xkit-show-originals-controls')?.after(controlsElement);
     }
   };
 
@@ -118,11 +126,12 @@ export const createPostHideFunctions = ({ id, permalinkPageControls }) => {
 
     if (onPermalinkPage) {
       if (permalinkPageControls) {
-        addPermalinkPageControls(postElement, timelineElement);
+        addControlsElement(postElement, timelineElement, permalinkPageControls.message, permalinkPageControls.buttonText || 'View post');
       } else {
         // do nothing; avoid hiding single post and making permalink page look broken
       }
     } else {
+      timelineControls && addControlsElement(postElement, timelineElement, timelineControls.message, timelineControls.buttonText || 'View posts');
       getTimelineItemWrapper(postElement).setAttribute(hiddenAttribute, '');
     }
   };
