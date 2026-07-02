@@ -79,12 +79,19 @@ document.documentElement.append(styleElement);
  */
 
 /**
+ * @typedef {object} CustomControlsOptions
+ * @property {(timeline: HTMLElement) => boolean} timelineFilter Timeline types to add custom controls to
+ * @property {string} message Message to display in custom controls
+ */
+
+/**
  * @param {object} options Destructured
  * @param {string} options.id Identifier for this post hiding instance (must be unique)
  * @param {PermalinkPageOptions} [options.permalinkPageControls] If specified, single posts on permalink pages are hidden with an informative, dismissable UI
+ * @param {CustomControlsOptions} [options.customControls] If specified, posts on a specified timeline type are hidden with an informative, dismissable UI
  * @returns {PostHideFunctions} Functions to hide/show posts
  */
-export const createPostHideFunctions = ({ id, permalinkPageControls }) => {
+export const createPostHideFunctions = ({ id, permalinkPageControls, customControls }) => {
   const hiddenAttribute = `data-xkit-${id}-hidden`;
 
   const controlledHiddenAttribute = `data-xkit-${id}-hidden-controlled`;
@@ -98,30 +105,33 @@ export const createPostHideFunctions = ({ id, permalinkPageControls }) => {
     }
   `;
 
-  const addPermalinkPageControls = (postElement, timelineElement) => {
+  const addTimelineControls = (postElement, timelineElement, message, buttonText) => {
     const timelineItemWrapper = getTimelineItemWrapper(postElement);
     if (timelineItemWrapper.hasAttribute(controlledHiddenAttribute) === false) {
       timelineItemWrapper.toggleAttribute(controlledHiddenAttribute, true);
 
-      const { message } = permalinkPageControls;
       const controlsElement = div({ class: controlsClass, [controlsAttribute]: id }, [
         message,
-        button({ click: () => controlsElement.remove() }, ['View post']),
+        button({ click: () => controlsElement.remove() }, [buttonText]),
       ]);
       timelineElement.prepend(controlsElement);
+      // timelineElement.querySelector('.xkit-show-originals-controls')?.after(controlsElement);
     }
   };
 
   const hidePost = postElement => {
     const timelineElement = postElement.closest(timelineSelector);
     const onPermalinkPage = anyPostPermalinkTimelineFilter(timelineElement);
+    const onCustomControlsTimeline = customControls?.timelineFilter?.(timelineElement);
 
     if (onPermalinkPage) {
       if (permalinkPageControls) {
-        addPermalinkPageControls(postElement, timelineElement);
+        addTimelineControls(postElement, timelineElement, permalinkPageControls.message, 'View post');
       } else {
         // do nothing; avoid hiding single post and making permalink page look broken
       }
+    } else if (onCustomControlsTimeline) {
+      addTimelineControls(postElement, timelineElement, customControls.message, 'View posts');
     } else {
       getTimelineItemWrapper(postElement).toggleAttribute(hiddenAttribute, true);
     }
