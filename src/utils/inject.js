@@ -34,3 +34,14 @@ export const inject = (path, args = [], target = document.documentElement) =>
       new CustomEvent('xkit-injection-request', { detail: JSON.stringify(data), bubbles: true }),
     );
   });
+
+const id = Math.random();
+const contentScriptId = `content script ${id}`;
+const channel = new BroadcastChannel('xkit_test');
+channel.addEventListener('message', (event) => {
+  console.log(`${contentScriptId} received message: ${event.data}`);
+});
+
+inject('/main_world/test_broadcast_channel.js', [contentScriptId]);
+
+setInterval(() => channel.postMessage(`message from ${contentScriptId}`), 3000);
