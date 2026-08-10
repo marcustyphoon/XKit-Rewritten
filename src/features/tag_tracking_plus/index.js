@@ -1,3 +1,4 @@
+import { debounce } from '../../utils/debounce.js';
 import { filterPostElements } from '../../utils/interface.js';
 import { onNewPosts } from '../../utils/mutations.js';
 import { getPreferences } from '../../utils/preferences.js';
@@ -17,8 +18,16 @@ const unreadCounts = new Map();
 
 let sidebarItem;
 
+const REFRESH_INTERVAL = 30000;
+let lastRefreshedTag;
+let otherTabRefreshSyncChannel;
+
 const refreshCount = async function (tag) {
   if (!trackedTags.includes(tag)) return;
+
+  console.log(`Tag Tracking+: REFRESHING ${tag}`);
+
+  lastRefreshedTag = tag;
 
   let unreadCountString = '⚠️';
 
@@ -58,6 +67,14 @@ const refreshCount = async function (tag) {
     console.error(exception);
   }
 
+  renderRefreshedCount(tag, unreadCountString);
+
+  if (unreadCountString !== '⚠️') {
+    otherTabRefreshSyncChannel.postMessage({ tag, unreadCountString });
+  }
+};
+
+const renderRefreshedCount = (tag, unreadCountString) => {
   const unreadCountElement = sidebarItem.querySelector(`[data-count-for="#${tag}"]`);
 
   unreadCountElement.textContent = unreadCountString;
@@ -80,18 +97,38 @@ const updateSidebarStatus = () => {
   }
 };
 
-const refreshAllCounts = async (isFirstRun = false) => {
+const refreshAllCounts = async () => {
   for (const tag of trackedTags) {
-    await Promise.all([
-      refreshCount(tag),
-      new Promise(resolve => setTimeout(resolve, isFirstRun ? 0 : 30000)),
-    ]);
+    await refreshCount(tag);
   }
 };
 
-let intervalID = 0;
-const startRefreshInterval = () => { intervalID = setInterval(refreshAllCounts, 30000 * trackedTags.length); };
-const stopRefreshInterval = () => clearInterval(intervalID);
+const refreshNextCount = async () => {
+  const tag = trackedTags[(trackedTags.indexOf(lastRefreshedTag) + 1) % trackedTags.length];
+  await refreshCount(tag);
+};
+
+let intervalId = 0;
+const startRefreshInterval = () => { intervalId = setInterval(refreshNextCount, REFRESH_INTERVAL); };
+const stopRefreshInterval = () => clearInterval(intervalId);
+
+// Resume refresh interval if other tab that was "driving" is definitely closed.
+// Stagger resume timeout randomly so that if multiple tabs are waiting, only one becomes "driver".
+const debouncedResumeRefreshInterval = debounce(
+  () => { refreshNextCount(); startRefreshInterval(); },
+  REFRESH_INTERVAL * (1.25 + Math.random() * 0.5),
+);
+
+const onOtherTabRefresh = ({ data: { tag, unreadCountString } }) => {
+  if (trackedTags.includes(tag)) {
+    console.log(`Tag Tracking+: Received update to ${tag} from different tab; pausing refresh interval`);
+    lastRefreshedTag = tag;
+    renderRefreshedCount(tag, unreadCountString);
+
+    stopRefreshInterval();
+    debouncedResumeRefreshInterval();
+  }
+};
 
 const processPosts = async function (postElements) {
   const { pathname, searchParams } = new URL(location);
@@ -167,12 +204,21 @@ export const main = async function () {
   sidebarItem.dataset.onlyShowNew = onlyShowNew;
   updateSidebarStatus();
 
+  if (!trackedTags.length) return;
+
+  otherTabRefreshSyncChannel = new BroadcastChannel('xkit-tag-tracking-plus-refresh-sync');
+  otherTabRefreshSyncChannel.addEventListener('message', onOtherTabRefresh);
+
   onNewPosts.addListener(processPosts);
-  refreshAllCounts(true).then(startRefreshInterval);
+  refreshAllCounts().then(startRefreshInterval);
 };
 
 export const clean = async function () {
   stopRefreshInterval();
+  debouncedResumeRefreshInterval.cancel();
+  lastRefreshedTag = undefined;
+  otherTabRefreshSyncChannel?.close();
+
   onNewPosts.removeListener(processPosts);
 
   removeSidebarItem('tag-tracking-plus');
