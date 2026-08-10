@@ -122,5 +122,7 @@ const id = Math.random();
 const popupId = `popup ${id}`;
 const channel = new BroadcastChannel('xkit_test');
 channel.addEventListener('message', (event) => {
-  console.log(`${popupId} received message: ${event.data}`);
+  if (event.data.id === id) return;
+  const now = performance.timeOrigin + performance.now();
+  console.log(`${popupId} received message: ${event.data.message}. delay: ${now - event.data.now}`);
 });
