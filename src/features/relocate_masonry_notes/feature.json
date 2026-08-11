@@ -1,0 +1,9 @@
+{
+  "title": "Relocate Masonry Notes",
+  "description": "Move notes popups below posts in masonry",
+  "icon": {
+    "class_name": "ri-stacked-view",
+    "color": "white",
+    "background_color": "#000000"
+  }
+}
