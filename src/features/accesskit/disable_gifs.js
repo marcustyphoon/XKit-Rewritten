@@ -14,6 +14,7 @@ const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 const hoverContainerAttribute = 'data-paused-gif-hover-container';
 const labelAttribute = 'data-paused-gif-label';
 const labelSizeAttribute = 'data-paused-gif-label-size';
+const positionHoverFixAttribute = 'data-paused-gif-position-hover-fix';
 const containerClass = 'xkit-paused-gif-container';
 
 const hovered = `:is(:hover, [${hoverContainerAttribute}]:hover *)`;
@@ -86,6 +87,11 @@ ${keyToCss('background')}[${labelAttribute}="before"]::before {
 
 [style*="${pausedBackgroundImageVar}"]:not(${hovered}) {
   background-image: var(${pausedBackgroundImageVar}) !important;
+}
+
+[${positionHoverFixAttribute}] {
+  position: relative;
+  pointer-events: auto !important;
 }
 `);
 
@@ -182,6 +188,10 @@ const pauseGif = async function (gifElement) {
       canvasElement.getContext('2d').drawImage(image, 0, 0);
       gifElement.after(canvasElement);
       addLabel(gifElement);
+
+      gifElement.closest(keyToCss(
+        'adContainer', // sidebar advertisement
+      ))?.setAttribute(positionHoverFixAttribute, '');
     }
   };
 };
@@ -289,7 +299,7 @@ export const main = async function () {
         'tagImage', // search page sidebar related tags, recommended tag carousel entry: https://www.tumblr.com/search/gif, https://www.tumblr.com/explore/recommended-for-you
         'topPost', // activity page top post
         'takeoverBanner', // advertisement
-        'mrecContainer', // advertisement
+        'mrecContainer', // sidebar advertisement
       )}
     ) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
@@ -337,6 +347,7 @@ export const clean = async function () {
   $(`[${labelSizeAttribute}]`).removeAttr(labelSizeAttribute);
   $(`[${pausedPosterAttribute}]`).removeAttr(pausedPosterAttribute);
   $(`[${hoverContainerAttribute}]`).removeAttr(hoverContainerAttribute);
+  $(`[${positionHoverFixAttribute}]`).removeAttr(positionHoverFixAttribute);
   [...document.querySelectorAll(`[style*="${pausedBackgroundImageVar}"]`)]
     .forEach(element => element.style.removeProperty(pausedBackgroundImageVar));
 };
