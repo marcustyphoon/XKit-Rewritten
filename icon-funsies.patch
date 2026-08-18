@@ -1,0 +1,198 @@
+diff --git a/dev/copy-libs.sh b/dev/copy-libs.sh
+index 2ca22dbf..7e5f5e73 100755
+--- a/dev/copy-libs.sh
++++ b/dev/copy-libs.sh
+@@ -3,5 +3,4 @@ cp node_modules/@melloware/coloris/dist/esm/coloris.js src/lib/
+ cp node_modules/jquery/dist/jquery.slim.min.js src/lib/
+ cp node_modules/modern-normalize/modern-normalize.css src/lib/
+ cp node_modules/moment/dist/moment.js src/lib/
+-cp node_modules/remixicon/fonts/remixicon.symbol.svg src/lib/
+ cp node_modules/sortablejs/modular/sortable.esm.js src/lib/
+diff --git a/src/features/mutual_checker/index.js b/src/features/mutual_checker/index.js
+index b828933f..4f7e9391 100644
+--- a/src/features/mutual_checker/index.js
++++ b/src/features/mutual_checker/index.js
+@@ -90,7 +90,7 @@ const addIcons = function (postElements) {
+     if (isMutual) {
+       postElement.classList.add(mutualsClass);
+       const iconTarget = getPopoverWrapper(postAttribution) ?? postAttribution;
+-      iconTarget?.before(createIcon(isMutual, blogName));
++      iconTarget?.before(await createIcon(isMutual, blogName));
+     } else if (showOnlyMutuals) {
+       getTimelineItemWrapper(postElement)?.toggleAttribute(hiddenAttribute, true);
+     }
+@@ -107,7 +107,7 @@ const addBlogCardIcons = blogCardLinks =>
+     const isMutual = followingBlog && isFollowingYou;
+ 
+     if (isFollowingYou) {
+-      blogCardLink.before(createIcon(isMutual, blogName, getComputedStyle(blogCardLink).color));
++      blogCardLink.before(await createIcon(isMutual, blogName, getComputedStyle(blogCardLink).color));
+     }
+   });
+ 
+@@ -152,7 +152,7 @@ export const main = async function () {
+   }
+ };
+ 
+-const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
++const createIcon = async (isMutual, blogName, color = 'rgb(var(--black))') =>
+   dom('svg', {
+     xmlns: 'http://www.w3.org/2000/svg',
+     class: mutualIconClass,
+@@ -169,7 +169,7 @@ const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
+         dom('title', { xmlns: 'http://www.w3.org/2000/svg' }, null, [
+           translate('{{blogNameLink /}} follows you!').replace('{{blogNameLink /}}', blogName),
+         ]),
+-        buildSvg('ri-user-follow-line').firstElementChild,
++        await buildSvg(import.meta.resolve).then(icon => icon.firstElementChild),
+       ],
+   );
+ 
+diff --git a/src/features/quick_tags/index.js b/src/features/quick_tags/index.js
+index 39afd200..e8e673b7 100644
+--- a/src/features/quick_tags/index.js
++++ b/src/features/quick_tags/index.js
+@@ -11,7 +11,6 @@ import { getPreferences } from '../../utils/preferences.js';
+ import { timelineObject, editPostFormTags, updatePostOnPage } from '../../utils/react_props.js';
+ import { apiFetch, createEditRequestBody, isNpfCompatible } from '../../utils/tumblr_helpers.js';
+ 
+-const symbolId = 'ri-price-tag-3-line';
+ const buttonClass = 'xkit-quick-tags-button';
+ const excludeClass = 'xkit-quick-tags-done';
+ 
+@@ -268,10 +267,14 @@ const migrateTags = async ({ detail }) => {
+ };
+ 
+ export const main = async function () {
+-  controlButtonTemplate = createControlButtonTemplate(symbolId, buttonClass, 'Quick Tags');
++  controlButtonTemplate = await createControlButtonTemplate(import.meta.resolve, buttonClass, 'Quick Tags');
+ 
+   onNewPosts.addListener(processPosts);
+-  registerPostOption({ id: 'quick-tags', symbolId, onclick: togglePostOptionPopupDisplay });
++  registerPostOption({
++    id: 'quick-tags',
++    iconPath: import.meta.resolve,
++    onclick: togglePostOptionPopupDisplay,
++  });
+ 
+   populatePopups();
+ 
+diff --git a/src/features/quote_replies/index.js b/src/features/quote_replies/index.js
+index 75781f66..986ae324 100644
+--- a/src/features/quote_replies/index.js
++++ b/src/features/quote_replies/index.js
+@@ -98,7 +98,7 @@ const processNotifications = notifications => notifications.forEach(async notifi
+           .finally(() => { this.disabled = false; });
+       },
+     },
+-    [buildSvg('ri-chat-quote-line')],
++    [await buildSvg(import.meta.resolve)],
+   ));
+ });
+ 
+diff --git a/src/features/trim_reblogs/index.js b/src/features/trim_reblogs/index.js
+index 0e12cd51..93187635 100644
+--- a/src/features/trim_reblogs/index.js
++++ b/src/features/trim_reblogs/index.js
+@@ -8,7 +8,6 @@ import { notify } from '../../utils/notifications.js';
+ import { timelineObject } from '../../utils/react_props.js';
+ import { apiFetch, createEditRequestBody } from '../../utils/tumblr_helpers.js';
+ 
+-const symbolId = 'ri-scissors-cut-line';
+ const buttonClass = 'xkit-trim-reblogs-button';
+ const reblogPreviewClass = 'xkit-trim-reblogs-preview';
+ const avatarPreviewClass = 'xkit-trim-reblogs-avatar-preview';
+@@ -166,7 +165,7 @@ const processPosts = postElements => filterPostElements(postElements).forEach(as
+ });
+ 
+ export const main = async function () {
+-  controlButtonTemplate = createControlButtonTemplate(symbolId, buttonClass, 'Trim Reblogs');
++  controlButtonTemplate = await createControlButtonTemplate(import.meta.resolve, buttonClass, 'Trim Reblogs');
+   onNewPosts.addListener(processPosts);
+ };
+ 
+diff --git a/src/utils/control_buttons.js b/src/utils/control_buttons.js
+index e94f0464..e702e4ea 100644
+--- a/src/utils/control_buttons.js
++++ b/src/utils/control_buttons.js
+@@ -9,16 +9,16 @@ $('.xkit-control-button-container').remove();
+ 
+ /**
+  * Create a button template that can be cloned with cloneControlButton() for inserting into the controls in a post's footer.
+- * @param {string} symbolId The name of the RemixIcon to use
++ * @param {string} iconPath Icon path to use, or import.meta.resolve to use local icon
+  * @param {string} buttonClass An extra class to identify the extension that added the button
+  * @param {string} label Descriptive text to be set as the button aria-label property and tooltip
+- * @returns {HTMLDivElement} A button that can be cloned with cloneControlButton()
++ * @returns {Promise<HTMLDivElement>} A button that can be cloned with cloneControlButton()
+  */
+-export const createControlButtonTemplate = function (symbolId, buttonClass, label = '') {
++export const createControlButtonTemplate = async function (iconPath, buttonClass, label = '') {
+   return dom('span', { class: `xkit-control-button-container ${buttonClass}`, [displayInlineBlockUnlessDisabledAttr]: '' }, null, [
+     dom('button', { class: 'xkit-control-button', 'aria-label': label, title: label }, null, [
+       dom('span', { class: 'xkit-control-button-inner', tabindex: '-1' }, null, [
+-        buildSvg(symbolId),
++        await buildSvg(iconPath),
+       ]),
+     ]),
+   ]);
+diff --git a/src/utils/post_actions.js b/src/utils/post_actions.js
+index 084383fb..4cb45430 100644
+--- a/src/utils/post_actions.js
++++ b/src/utils/post_actions.js
+@@ -31,14 +31,14 @@ pageModifications.register(keyToCss('postFormButton'), addPostOptions);
+  * Create and register a button to add to the new post form
+  * @param {object} options Destructured
+  * @param {string} options.id Identifier for this post option (must be unique)
+- * @param {string} options.symbolId RemixIcon symbol to use
++ * @param {string|(string) => string} options.iconPath Icon path to use, or import.meta.resolve to use local icon
+  * @param {(event: PointerEvent) => void} options.onclick Click handler function for this button
+  * @param {boolean} [options.showInAskForm] Whether to show the button in the ask form
+  */
+-export const registerPostOption = async function ({ id, symbolId, onclick, showInAskForm = false }) {
++export const registerPostOption = async function ({ id, iconPath, onclick, showInAskForm = false }) {
+   postOptions[id] = {
+     element: label({ class: 'xkit-post-option', [displayBlockUnlessDisabledAttr]: '' }, [
+-      button({ click: onclick }, [buildSvg(symbolId)]),
++      button({ click: onclick }, [await buildSvg(iconPath)]),
+     ]),
+     showInAskForm,
+   };
+diff --git a/src/utils/remixicon.js b/src/utils/remixicon.js
+index e30b92ee..1ff19250 100644
+--- a/src/utils/remixicon.js
++++ b/src/utils/remixicon.js
+@@ -1,23 +1,15 @@
+-import { dom } from './dom.js';
++import { memoize } from './memoize.js';
+ 
+-const symbolsUrl = browser.runtime.getURL('/lib/remixicon.symbol.svg');
+-
+-if (document.querySelector(`svg[data-src="${symbolsUrl}"]`) === null) {
+-  fetch(symbolsUrl)
+-    .then(response => response.text())
+-    .then(responseText => {
+-      const responseDocument = (new DOMParser()).parseFromString(responseText, 'image/svg+xml');
+-      const symbols = responseDocument.firstElementChild;
+-      symbols.dataset.src = symbolsUrl;
+-      document.head.appendChild(symbols);
+-    });
+-}
++const getSourceIcon = memoize(async path => {
++  const iconUrl = typeof path === 'function' ? path('./icon.svg') : browser.runtime.getURL(path);
++  const iconResponse = await fetch(iconUrl);
++  const iconText = await iconResponse.text();
++  return new DOMParser().parseFromString(iconText, 'image/svg+xml').firstElementChild;
++});
+ 
+ /**
+  * @see https://remixicon.com/
+- * @param {string} symbolId RemixIcon symbol id to use
+- * @returns {SVGElement} an SVG element that renders the specified icon
++ * @param {string|(string) => string} path Icon path to use, or import.meta.resolve to use local icon
++ * @returns {Promise<SVGElement>} an SVG element that renders the specified icon
+  */
+-export const buildSvg = symbolId => dom('svg', { xmlns: 'http://www.w3.org/2000/svg' }, null, [
+-  dom('use', { xmlns: 'http://www.w3.org/2000/svg', href: `#${symbolId}` }),
+-]);
++export const buildSvg = path => getSourceIcon(path).then(sourceIcon => sourceIcon.cloneNode(true));
