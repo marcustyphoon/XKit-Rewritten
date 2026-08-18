@@ -90,7 +90,7 @@ const addIcons = function (postElements) {
     if (isMutual) {
       postElement.classList.add(mutualsClass);
       const iconTarget = getPopoverWrapper(postAttribution) ?? postAttribution;
-      iconTarget?.before(createIcon(isMutual, blogName));
+      iconTarget?.before(await createIcon(isMutual, blogName));
     } else if (showOnlyMutuals) {
       getTimelineItemWrapper(postElement)?.toggleAttribute(hiddenAttribute, true);
     }
@@ -107,7 +107,7 @@ const addBlogCardIcons = blogCardLinks =>
     const isMutual = followingBlog && isFollowingYou;
 
     if (isFollowingYou) {
-      blogCardLink.before(createIcon(isMutual, blogName, getComputedStyle(blogCardLink).color));
+      blogCardLink.before(await createIcon(isMutual, blogName, getComputedStyle(blogCardLink).color));
     }
   });
 
@@ -152,7 +152,7 @@ export const main = async function () {
   }
 };
 
-const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
+const createIcon = async (isMutual, blogName, color = 'rgb(var(--black))') =>
   dom('svg', {
     xmlns: 'http://www.w3.org/2000/svg',
     class: mutualIconClass,
@@ -169,7 +169,7 @@ const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
         dom('title', { xmlns: 'http://www.w3.org/2000/svg' }, null, [
           translate('{{blogNameLink /}} follows you!').replace('{{blogNameLink /}}', blogName),
         ]),
-        buildSvg('ri-user-follow-line').firstElementChild,
+        await buildSvg(import.meta.resolve).then(icon => icon.firstElementChild),
       ],
   );
 

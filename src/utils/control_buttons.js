@@ -9,16 +9,16 @@ $('.xkit-control-button-container').remove();
 
 /**
  * Create a button template that can be cloned with cloneControlButton() for inserting into the controls in a post's footer.
- * @param {string} symbolId The name of the RemixIcon to use
+ * @param {string} iconPath Icon path to use, or import.meta.resolve to use local icon
  * @param {string} buttonClass An extra class to identify the extension that added the button
  * @param {string} label Descriptive text to be set as the button aria-label property and tooltip
- * @returns {HTMLDivElement} A button that can be cloned with cloneControlButton()
+ * @returns {Promise<HTMLDivElement>} A button that can be cloned with cloneControlButton()
  */
-export const createControlButtonTemplate = function (symbolId, buttonClass, label = '') {
+export const createControlButtonTemplate = async function (iconPath, buttonClass, label = '') {
   return dom('span', { class: `xkit-control-button-container ${buttonClass}`, [displayInlineBlockUnlessDisabledAttr]: '' }, null, [
     dom('button', { class: 'xkit-control-button', 'aria-label': label, title: label }, null, [
       dom('span', { class: 'xkit-control-button-inner', tabindex: '-1' }, null, [
-        buildSvg(symbolId),
+        await buildSvg(iconPath),
       ]),
     ]),
   ]);

@@ -1,23 +1,15 @@
-import { dom } from './dom.js';
+import { memoize } from './memoize.js';
 
-const symbolsUrl = browser.runtime.getURL('/lib/remixicon.symbol.svg');
-
-if (document.querySelector(`svg[data-src="${symbolsUrl}"]`) === null) {
-  fetch(symbolsUrl)
-    .then(response => response.text())
-    .then(responseText => {
-      const responseDocument = (new DOMParser()).parseFromString(responseText, 'image/svg+xml');
-      const symbols = responseDocument.firstElementChild;
-      symbols.dataset.src = symbolsUrl;
-      document.head.appendChild(symbols);
-    });
-}
+const getSourceIcon = memoize(async path => {
+  const iconUrl = typeof path === 'function' ? path('./icon.svg') : browser.runtime.getURL(path);
+  const iconResponse = await fetch(iconUrl);
+  const iconText = await iconResponse.text();
+  return new DOMParser().parseFromString(iconText, 'image/svg+xml').firstElementChild;
+});
 
 /**
  * @see https://remixicon.com/
- * @param {string} symbolId RemixIcon symbol id to use
- * @returns {SVGElement} an SVG element that renders the specified icon
+ * @param {string|(string) => string} path Icon path to use, or import.meta.resolve to use local icon
+ * @returns {Promise<SVGElement>} an SVG element that renders the specified icon
  */
-export const buildSvg = symbolId => dom('svg', { xmlns: 'http://www.w3.org/2000/svg' }, null, [
-  dom('use', { xmlns: 'http://www.w3.org/2000/svg', href: `#${symbolId}` }),
-]);
+export const buildSvg = path => getSourceIcon(path).then(sourceIcon => sourceIcon.cloneNode(true));

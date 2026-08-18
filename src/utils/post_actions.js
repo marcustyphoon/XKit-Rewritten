@@ -31,14 +31,14 @@ pageModifications.register(keyToCss('postFormButton'), addPostOptions);
  * Create and register a button to add to the new post form
  * @param {object} options Destructured
  * @param {string} options.id Identifier for this post option (must be unique)
- * @param {string} options.symbolId RemixIcon symbol to use
+ * @param {string|(string) => string} options.iconPath Icon path to use, or import.meta.resolve to use local icon
  * @param {(event: PointerEvent) => void} options.onclick Click handler function for this button
  * @param {boolean} [options.showInAskForm] Whether to show the button in the ask form
  */
-export const registerPostOption = async function ({ id, symbolId, onclick, showInAskForm = false }) {
+export const registerPostOption = async function ({ id, iconPath, onclick, showInAskForm = false }) {
   postOptions[id] = {
     element: label({ class: 'xkit-post-option', [displayBlockUnlessDisabledAttr]: '' }, [
-      button({ click: onclick }, [buildSvg(symbolId)]),
+      button({ click: onclick }, [await buildSvg(iconPath)]),
     ]),
     showInAskForm,
   };

@@ -11,7 +11,6 @@ import { getPreferences } from '../../utils/preferences.js';
 import { timelineObject, editPostFormTags, updatePostOnPage } from '../../utils/react_props.js';
 import { apiFetch, createEditRequestBody, isNpfCompatible } from '../../utils/tumblr_helpers.js';
 
-const symbolId = 'ri-price-tag-3-line';
 const buttonClass = 'xkit-quick-tags-button';
 const excludeClass = 'xkit-quick-tags-done';
 
@@ -268,10 +267,14 @@ const migrateTags = async ({ detail }) => {
 };
 
 export const main = async function () {
-  controlButtonTemplate = createControlButtonTemplate(symbolId, buttonClass, 'Quick Tags');
+  controlButtonTemplate = await createControlButtonTemplate(import.meta.resolve, buttonClass, 'Quick Tags');
 
   onNewPosts.addListener(processPosts);
-  registerPostOption({ id: 'quick-tags', symbolId, onclick: togglePostOptionPopupDisplay });
+  registerPostOption({
+    id: 'quick-tags',
+    iconPath: import.meta.resolve,
+    onclick: togglePostOptionPopupDisplay,
+  });
 
   populatePopups();
 
