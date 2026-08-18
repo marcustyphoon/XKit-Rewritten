@@ -8,7 +8,7 @@ import { notify } from '../../utils/notifications.js';
 import { timelineObject } from '../../utils/react_props.js';
 import { apiFetch, createEditRequestBody } from '../../utils/tumblr_helpers.js';
 
-const symbolId = 'ri-scissors-cut-line';
+const iconUrl = import.meta.resolve('./icon.svg');
 const buttonClass = 'xkit-trim-reblogs-button';
 const reblogPreviewClass = 'xkit-trim-reblogs-preview';
 const avatarPreviewClass = 'xkit-trim-reblogs-avatar-preview';
@@ -166,7 +166,7 @@ const processPosts = postElements => filterPostElements(postElements).forEach(as
 });
 
 export const main = async function () {
-  controlButtonTemplate = createControlButtonTemplate(symbolId, buttonClass, 'Trim Reblogs');
+  controlButtonTemplate = createControlButtonTemplate(iconUrl, buttonClass, 'Trim Reblogs');
   onNewPosts.addListener(processPosts);
 };
 

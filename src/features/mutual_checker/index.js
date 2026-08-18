@@ -156,7 +156,7 @@ const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
   dom('svg', {
     xmlns: 'http://www.w3.org/2000/svg',
     class: mutualIconClass,
-    viewBox: '0 0 1000 1000',
+    viewBox: isMutual ? '0 0 1000 1000' : '0 0 24 24',
     fill: color,
   }, null, isMutual
     ? [
@@ -169,7 +169,7 @@ const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
         dom('title', { xmlns: 'http://www.w3.org/2000/svg' }, null, [
           translate('{{blogNameLink /}} follows you!').replace('{{blogNameLink /}}', blogName),
         ]),
-        buildSvg('ri-user-follow-line').firstElementChild,
+        buildSvg(import.meta.resolve('./follows-you.svg')).firstElementChild,
       ],
   );
 

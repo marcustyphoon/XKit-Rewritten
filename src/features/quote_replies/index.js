@@ -98,7 +98,7 @@ const processNotifications = notifications => notifications.forEach(async notifi
           .finally(() => { this.disabled = false; });
       },
     },
-    [buildSvg('ri-chat-quote-line')],
+    [buildSvg(import.meta.resolve('./icon.svg'))],
   ));
 });
 
