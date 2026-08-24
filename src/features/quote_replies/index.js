@@ -93,7 +93,7 @@ const processNotifications = notifications => notifications.forEach(async notifi
         .catch(showErrorModal)
         .finally(() => { this.disabled = false; });
     },
-  }, [buildSvg('ri-chat-quote-line')]));
+  }, [buildSvg(import.meta.resolve('./icon.svg'))]));
 });
 
 const quoteReply = async (tumblelogName, notificationProps) => {

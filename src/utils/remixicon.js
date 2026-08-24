@@ -1,21 +1,22 @@
 import { svg, use } from './dom.js';
+import { memoize } from './memoize.js';
 
-const symbolsUrl = browser.runtime.getURL('/lib/remixicon.symbol.svg');
-
-if (document.querySelector(`svg[data-src="${symbolsUrl}"]`) === null) {
-  fetch(symbolsUrl)
+const getIconContentId = memoize(iconUrl => {
+  const id = CSS.escape(`xkit-icon-${new URL(iconUrl).pathname}-${Date.now()}`);
+  fetch(iconUrl)
     .then(response => response.text())
     .then(responseText => {
       const responseDocument = (new DOMParser()).parseFromString(responseText, 'image/svg+xml');
-      const symbols = responseDocument.firstElementChild;
-      symbols.dataset.src = symbolsUrl;
-      document.head.appendChild(symbols);
+      const iconElement = responseDocument.firstElementChild;
+      iconElement.style.display = 'none';
+      iconElement.firstElementChild.id = id;
+      document.head.appendChild(iconElement);
     });
-}
+  return id;
+});
 
 /**
- * @see https://remixicon.com/
- * @param {string} symbolId RemixIcon symbol id to use
+ * @param {string} iconUrl Icon url to use, such as one produced by import.meta.resolve or browser.runtime.getURL
  * @returns {SVGElement} an SVG element that renders the specified icon
  */
-export const buildSvg = symbolId => svg({}, [use({ href: `#${symbolId}` })]);
+export const buildSvg = iconUrl => svg({}, [use({ href: `#${getIconContentId(iconUrl)}` })]);

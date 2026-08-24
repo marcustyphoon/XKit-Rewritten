@@ -155,7 +155,7 @@ export const main = async function () {
 const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
   svg({
     class: mutualIconClass,
-    viewBox: '0 0 1000 1000',
+    viewBox: isMutual ? '0 0 1000 1000' : '0 0 24 24',
     fill: color,
   }, isMutual
     ? [
@@ -164,7 +164,7 @@ const createIcon = (isMutual, blogName, color = 'rgb(var(--black))') =>
       ]
     : [
         title({}, [translate('{{blogNameLink /}} follows you!').replace('{{blogNameLink /}}', blogName)]),
-        buildSvg('ri-user-follow-line').firstElementChild,
+        buildSvg(import.meta.resolve('./follows-you.svg')).firstElementChild,
       ],
   );
 
