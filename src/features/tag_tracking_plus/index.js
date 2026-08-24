@@ -25,6 +25,10 @@ const FIRST_RUN_REFRESH_INTERVAL = 500; // Load tags up to this quickly after fe
 const REFRESH_INTERVAL = 10 * 1000; // Refresh tags up to this quickly in the background.
 const PER_TAG_REFRESH_TTL = 2 * 60 * 1000; // Only background-refresh each tag up to this often.
 
+const STORED_COUNT_TTL = 30 * 1000; // Allow stored counts up to this old to be substituted for API fetches.
+
+const countIsFresh = (count, ttl) => count && Date.now() - count.updated <= ttl;
+
 // If multiple browser tabs are currently refreshing the same tracked tag(s), only let the first refresh.
 let lastRefreshAttemptInAnotherTab = -Infinity;
 const thisTabShouldRefresh = (interval) => {
@@ -43,9 +47,9 @@ refreshAttemptChannel.addEventListener('message', ({ data }) => {
 const refreshSuccessChannel = new BroadcastChannel('xkit-tag-tracking-plus-refresh-success');
 refreshSuccessChannel.addEventListener('message', ({ data }) => {
   if (sameArrayContents(trackedTags, data.trackedTags)) {
-    for (const tag of Object.keys(data.unreadCounts)) {
-      if (!unreadCounts[tag] || data.unreadCounts[tag].updated > unreadCounts[tag].updated) {
-        unreadCounts[tag] = data.unreadCounts[tag];
+    for (const [tag, count] of Object.entries(data.unreadCounts)) {
+      if (countIsFresh(count, STORED_COUNT_TTL)) {
+        unreadCounts[tag] = count;
         updateSidebar(tag);
       }
     }
@@ -139,7 +143,7 @@ const startRefreshInterval = () => {
       const oldestTag = [...trackedTags]
         .sort((a, b) => unreadCounts[a].updated - unreadCounts[b].updated)
         .at(0);
-      if (Date.now() - unreadCounts[oldestTag].updated > PER_TAG_REFRESH_TTL) {
+      if (countIsFresh(unreadCounts[oldestTag], PER_TAG_REFRESH_TTL) === false) {
         refreshCount(oldestTag);
       } else {
         console.log(`Tag Tracking+: refresh fired, but oldest tag (${oldestTag}) is not older than PER_TAG_REFRESH_TTL ${PER_TAG_REFRESH_TTL}.`);
