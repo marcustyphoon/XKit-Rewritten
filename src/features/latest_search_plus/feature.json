@@ -1,0 +1,10 @@
+{
+  "title": "Latest Search+",
+  "description": "Simulate working \"latest\" search",
+  "note": "This feature reorders \"top\" search into chronological order. Endless scrolling must be enabled.",
+  "icon": {
+    "class_name": "ri-search-line",
+    "color": "white",
+    "background_color": "#000000"
+  }
+}
