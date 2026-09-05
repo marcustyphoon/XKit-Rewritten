@@ -3,6 +3,7 @@ import { onNewPosts } from '../../utils/mutations.js';
 import { getPreferences } from '../../utils/preferences.js';
 import { timelineObject } from '../../utils/react_props.js';
 import { addSidebarItem, removeSidebarItem } from '../../utils/sidebar.js';
+import { createMultiTabRateLimitFunction } from '../../utils/tab_coordination.js';
 import { tagTimelineFilter } from '../../utils/timeline_id.js';
 import { apiFetch, onClickNavigate } from '../../utils/tumblr_helpers.js';
 
@@ -17,8 +18,7 @@ let unreadCounts;
 const excludeClass = 'xkit-tag-tracking-plus-done';
 const includeFiltered = true;
 
-let trackedTags = [];
-let trackedTagsString;
+let trackedTags;
 
 let sidebarItem;
 
@@ -30,23 +30,7 @@ const INITIAL_LOAD_STORED_COUNT_MAX_AGE = 30_000; // During initial load (i.e. r
 
 const countIsStale = (tag, ttl) => unreadCounts[tag] && Date.now() - unreadCounts[tag].updated > ttl;
 
-// If multiple browser tabs are currently refreshing the same set of tracked tag(s), only allow one to refresh.
-let lastRefreshInAnotherTab = 0;
-const otherTabRefreshChannel = new BroadcastChannel('xkit-tag-tracking-plus-refresh-sync');
-otherTabRefreshChannel.addEventListener('message', event => {
-  if (event.data.trackedTagsString === trackedTagsString) {
-    lastRefreshInAnotherTab = Date.now();
-  }
-});
-const thisTabShouldRefresh = interval => {
-  const timeSinceRefresh = Date.now() - lastRefreshInAnotherTab;
-  if (timeSinceRefresh < interval * 1.5) {
-    console.info(`Tag Tracking+: skipping refresh; another tab refreshed ${timeSinceRefresh}ms ago`);
-    return false;
-  }
-  otherTabRefreshChannel.postMessage({ trackedTagsString });
-  return true;
-};
+let thisTabShouldRefresh;
 
 const refreshCount = async function (tag) {
   if (!trackedTags.includes(tag)) return;
@@ -209,7 +193,6 @@ export const onStorageChanged = async (changes) => {
 export const main = async function () {
   const trackedTagsData = (await apiFetch('/v2/user/tags')) ?? {};
   trackedTags = trackedTagsData.response?.tags?.map(({ name }) => name) ?? [];
-  trackedTagsString = JSON.stringify(trackedTags);
 
   sidebarItem = addSidebarItem({
     id: 'tag-tracking-plus',
@@ -242,6 +225,8 @@ export const main = async function () {
   }
   await browser.storage.local.set({ [unreadCountsStorageKey]: unreadCounts });
 
+  thisTabShouldRefresh = createMultiTabRateLimitFunction(`tag-tracking-plus-${JSON.stringify(trackedTags)}`);
+
   onNewPosts.addListener(processPosts);
   startRefreshLoop();
 };
@@ -251,10 +236,6 @@ export const clean = async function () {
   onNewPosts.removeListener(processPosts);
 
   removeSidebarItem('tag-tracking-plus');
-
-  trackedTags = [];
-  trackedTagsString = undefined;
-  lastRefreshInAnotherTab = 0;
 };
 
 export const stylesheet = true;
