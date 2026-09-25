@@ -34,3 +34,50 @@ export const inject = (path, args = [], target = document.documentElement) =>
       new CustomEvent('xkit-injection-request', { detail: JSON.stringify(data), bubbles: true }),
     );
   });
+
+const id = Math.random();
+const contentScriptId = `content script ${id}`;
+const channel = new BroadcastChannel('xkit_test');
+channel.addEventListener('message', (event) => {
+  if (event.data.id === id) return;
+  const now = performance.timeOrigin + performance.now();
+  console.log(`${contentScriptId} received message: ${event.data.message}. delay: ${now - event.data.now}`);
+});
+
+inject('/main_world/test_broadcast_channel.js', [contentScriptId]);
+
+setInterval(
+  () =>
+    channel.postMessage({
+      id,
+      message: `message from ${contentScriptId}`,
+      now: performance.timeOrigin + performance.now(),
+    }),
+  3000,
+);
+
+// storage comparison
+
+const storageKey = 'TEST_AKWJDJKWN';
+
+const onStorageChanged = (changes) => {
+  if (Object.keys(changes).includes(storageKey)) {
+    const data = changes[storageKey].newValue;
+    const now = performance.timeOrigin + performance.now();
+    console.log(`${contentScriptId} received STORAGE message: ${data.message}. delay: ${now - data.now}`);
+  }
+};
+
+browser.storage.local.onChanged.addListener(onStorageChanged);
+
+setInterval(
+  () =>
+    browser.storage.local.set({
+      [storageKey]: {
+        id,
+        message: `message from ${contentScriptId}`,
+        now: performance.timeOrigin + performance.now(),
+      },
+    }),
+  3000,
+);
