@@ -1,15 +1,16 @@
 import { removeElementsByClassName } from '../../utils/cleanup.js';
 import { keyToCss } from '../../utils/css_map.js';
-import { canvas, div } from '../../utils/dom.js';
+import { div, img } from '../../utils/dom.js';
 import { buildStyle, postSelector } from '../../utils/interface.js';
 import { memoize } from '../../utils/memoize.js';
 import { pageModifications } from '../../utils/mutations.js';
 import { getPreferences } from '../../utils/preferences.js';
+import { gifData } from '../../utils/react_props.js';
 
 /** @type {AbortController}   */ let loadEventController;
 /** @type {"eager" | "lazy"}  */ let loadingMode;
 
-const canvasClass = 'xkit-paused-gif-placeholder';
+const posterClass = 'xkit-paused-gif-placeholder';
 const pausedPosterAttribute = 'data-paused-gif-use-poster';
 const pausedBackgroundImageVar = '--xkit-paused-gif-background-image';
 const hoverContainerAttribute = 'data-paused-gif-hover-container';
@@ -54,16 +55,16 @@ export const styleElement = buildStyle(`
   transform: translateY(-50%);
 }
 
-.${canvasClass} {
+.${posterClass} {
   position: absolute;
   visibility: visible;
   top: 0;
   left: 0;
 
-  background-color: rgb(var(--white));
+  background-color: transparent !important;
 }
 
-.${canvasClass}${parentHovered},
+.${posterClass}${parentHovered}:not(:has(~ ${keyToCss('loader')} > ${keyToCss('knightRiderLoader')})),
 [${labelAttribute}="after"]${hovered}::after,
 [${labelAttribute}="before"]${hovered}::before,
 [${pausedPosterAttribute}]:not(${hovered}) > div > ${keyToCss('knightRiderLoader')} {
@@ -75,14 +76,11 @@ ${keyToCss('background')}[${labelAttribute}="before"]::before {
   display: none;
 }
 
-[${pausedPosterAttribute}]:not(${hovered}) > img${keyToCss('poster')} {
-  visibility: visible !important;
-}
-[${pausedPosterAttribute}="eager"]:not(${hovered}) > img:not(${keyToCss('poster')}) {
+[${pausedPosterAttribute}="eager"]:not(${hovered}) > img:not(.${posterClass}) {
   visibility: hidden !important;
 }
-[${pausedPosterAttribute}="lazy"]:not(${hovered}) > img:not(${keyToCss('poster')}) {
-  display: none;
+[${pausedPosterAttribute}="lazy"]:not(${hovered}) > img:not(.${posterClass}) {
+  display: none !important;
 }
 
 [style*="${pausedBackgroundImageVar}"]:not(${hovered}) {
@@ -167,32 +165,26 @@ const createPausedUrlIfAnimated = memoize(async sourceUrl => {
   return URL.createObjectURL(blob);
 });
 
-const pauseGif = async function (gifElement) {
-  if (gifElement.currentSrc.endsWith('.webp') && !(await isAnimated(gifElement.currentSrc))) return;
-
-  const image = new Image();
-  image.src = gifElement.currentSrc;
-  image.onload = () => {
-    if (gifElement.parentNode && gifElement.parentNode.querySelector(`.${canvasClass}`) === null) {
-      const canvasElement = canvas({
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-        class: `${gifElement.className} ${canvasClass}`,
-        style: gifElement.getAttribute('style'),
-      });
-      canvasElement.getContext('2d').drawImage(image, 0, 0);
-      gifElement.after(canvasElement);
-      addLabel(gifElement);
-    }
-  };
+const pauseGif = async (gifElement, nativePoster) => {
+  const posterSrc = nativePoster || await createPausedUrlIfAnimated(gifElement.currentSrc);
+  if (posterSrc && gifElement.parentElement && !gifElement.parentElement.querySelector(`.${posterClass}`)) {
+    // todo: Possibly prevent white flash by forcing a waiting period here to download the poster image before inserting, if the loading gradient and indicator are already gone
+    gifElement.parentElement.setAttribute(pausedPosterAttribute, loadingMode);
+    gifElement.after(img({
+      src: posterSrc,
+      class: `${gifElement.className} ${posterClass}`,
+      style: gifElement.getAttribute('style') || '',
+    }));
+    addLabel(gifElement);
+  }
 };
 
 /** @type {(gifElements: HTMLImageElement[]) => void} */
 const processGifs = function (gifElements) {
-  gifElements.forEach(gifElement => {
+  gifElements.forEach(async gifElement => {
     if (gifElement.closest(`${keyToCss('avatarImage', 'subAvatarImage')}, .block-editor-writing-flow`)) return;
 
-    const pausedGifElements = [...gifElement.parentNode.querySelectorAll(`.${canvasClass}`)];
+    const pausedGifElements = [...gifElement.parentNode.querySelectorAll(`.${posterClass}`)];
     if (pausedGifElements.length) {
       gifElement.after(...pausedGifElements);
       return;
@@ -200,18 +192,21 @@ const processGifs = function (gifElements) {
 
     gifElement.decoding = 'sync';
 
-    const posterElement = gifElement.parentElement.querySelector(keyToCss('poster'));
-    if (posterElement) {
-      gifElement.parentElement.setAttribute(pausedPosterAttribute, loadingMode);
-      addLabel(posterElement);
-      return;
-    }
+    const dataWithPoster = gifElement.parentElement.matches(keyToCss('placeholder')) &&
+      await gifData(gifElement.parentElement);
 
-    if (gifElement.complete && gifElement.currentSrc) {
-      pauseGif(gifElement);
+    if (dataWithPoster) {
+      // Use Tumblr's pre-paused image URL
+      const gifSrc = dataWithPoster.imageResponse.at(-1)?.url;
+      const posterSrc = dataWithPoster.posterImages.at(-1)?.url;
+      if (!gifSrc.endsWith('.webp') || await isAnimated(gifSrc)) {
+        pauseGif(gifElement, posterSrc);
+      }
     } else {
+      // Create paused image URL from currentSrc (multiple times, if it changes)
+      // todo: Just use react props for this part too tbh
+      gifElement.currentSrc && pauseGif(gifElement);
       gifElement.addEventListener('load', () => pauseGif(gifElement), {
-        once: true,
         signal: loadEventController.signal,
       });
     }
@@ -272,6 +267,8 @@ const onStorageChanged = async function (changes) {
   loadingMode = modeChanges.newValue;
 };
 
+const processNativeGifPlayButtons = buttons => buttons.forEach(button => button.click());
+
 export const main = async function () {
   loadEventController = new AbortController();
 
@@ -295,6 +292,7 @@ export const main = async function () {
     ) img:is([srcset*=".gif"], [src*=".gif"], [srcset*=".webp"], [src*=".webp"]):not(${keyToCss('poster')})
   `;
   pageModifications.register(gifImage, processGifs);
+  pageModifications.register(`${gifImage} ~ ${keyToCss('playButton')}`, processNativeGifPlayButtons);
 
   const gifBackgroundImage = `
     ${keyToCss(
@@ -329,11 +327,13 @@ export const clean = async function () {
   pageModifications.unregister(processRows);
   pageModifications.unregister(processHoverableElements);
 
+  pageModifications.unregister(processNativeGifPlayButtons);
+
   [...document.querySelectorAll(`.${containerClass}`)].forEach(wrapper =>
     wrapper.replaceWith(...wrapper.children),
   );
 
-  removeElementsByClassName(canvasClass);
+  removeElementsByClassName(posterClass);
   $(`[${labelAttribute}]`).removeAttr(labelAttribute);
   $(`[${labelSizeAttribute}]`).removeAttr(labelSizeAttribute);
   $(`[${pausedPosterAttribute}]`).removeAttr(pausedPosterAttribute);

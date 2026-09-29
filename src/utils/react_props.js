@@ -31,6 +31,15 @@ export const notificationObject = notificationElement => {
 };
 
 /**
+ * @param {Element} gifElement An on-screen gif image
+ * @returns {Promise<{ imageSrc: Array, posterImages: Array }>} The image's buried imageSrc and posterImages properties
+ */
+export const gifData = gifElement => {
+  gifElement.gifDataPromise ??= inject('/main_world/unbury_gif_data.js', [], gifElement);
+  return gifElement.gifDataPromise;
+};
+
+/**
  * @param {Element} meatballMenu An on-screen meatball menu element in a blog modal header or blog card
  * @returns {Promise<object>} The post's buried blog or blogSettings property. Some blog data fields, such as "followed," are not available in blog cards.
  */
