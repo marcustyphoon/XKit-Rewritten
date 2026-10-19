@@ -8,14 +8,6 @@ const addedNodesPool = [];
 let repaintQueued = false;
 let timerId;
 
-const isolateErrors = callback => {
-  try {
-    callback();
-  } catch (exception) {
-    console.error(exception);
-  }
-};
-
 /**
  * Utilities to run specified code when a modification to the page results in the addition of elements matching a specified CSS selector.
  */
@@ -95,7 +87,7 @@ const onBeforeRepaint = () => {
   for (const [modifierFunction, selector] of pageModifications.listeners) {
     if (modifierFunction.length === 0) {
       const shouldRun = addedNodes.some(addedNode => addedNode.matches(selector) || addedNode.querySelector(selector) !== null);
-      if (shouldRun) isolateErrors(() => modifierFunction());
+      if (shouldRun) Promise.try(modifierFunction).catch(console.error);
       continue;
     }
 
@@ -105,7 +97,7 @@ const onBeforeRepaint = () => {
     ].filter((value, index, array) => index === array.indexOf(value));
 
     if (matchingElements.length !== 0) {
-      isolateErrors(() => modifierFunction(matchingElements));
+      Promise.try(modifierFunction, matchingElements).catch(console.error);
     }
   }
 };
