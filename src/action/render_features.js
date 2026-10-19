@@ -1,3 +1,4 @@
+import installedFeatures from '../features/index.json' with { type: 'json' };
 import { CheckboxPreference } from './components/checkbox-preference/index.js';
 import { ColorPreference } from './components/color-preference/index.js';
 import { PercentPreference } from './components/percent-preference/index.js';
@@ -28,18 +29,9 @@ const deprecatedIcon = new DOMParser().parseFromString(`
   </svg>
 `, 'image/svg+xml').firstElementChild;
 
-const getInstalledFeatures = async function () {
-  const url = browser.runtime.getURL('/features/index.json');
-  const file = await fetch(url);
-  const installedFeatures = await file.json();
-
-  return installedFeatures;
-};
-
 const renderFeatures = async function () {
   const featureElements = [];
 
-  const installedFeatures = await getInstalledFeatures();
   const {
     [enabledFeaturesKey]: enabledFeatures = [],
     [specialAccessKey]: specialAccess = [],
