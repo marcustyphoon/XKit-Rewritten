@@ -7,6 +7,8 @@ import { TextPreference } from './components/text-preference/index.js';
 import { TextAreaPreference } from './components/textarea-preference/index.js';
 import { XKitFeature } from './components/xkit-feature/index.js';
 
+const importJson = path => import(path, { with: { type: 'json' } }).then(module => module.default);
+
 const configPanel = document.getElementById('configuration-panel');
 const configTab = document.getElementById('configuration-tab');
 const featuresDiv = configPanel.querySelector('.features');
@@ -43,9 +45,8 @@ const renderFeatures = async function () {
   );
 
   for (const featureName of [...orderedEnabledFeatures, ...disabledFeatures]) {
-    const url = browser.runtime.getURL(`/features/${featureName}/feature.json`);
-    const file = await fetch(url);
-    const { title, description, icon, help, preferences, ...metadata } = await file.json();
+    const { title, description, icon, help, preferences, ...metadata } =
+      await importJson(`../features/${featureName}/feature.json`);
 
     const disabled = enabledFeatures.includes(featureName) === false;
     if (disabled && metadata.deprecated && !specialAccess.includes(featureName)) {
