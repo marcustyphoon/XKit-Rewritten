@@ -50,7 +50,7 @@
         "*://www.tumblr.com/register?*",
         "*://www.tumblr.com/privacy/*"
       ],
-      "run_at": "document_end",
+      "run_at": "document_start",
       "js": [
         "main_world/index.js"
       ],
@@ -66,10 +66,11 @@
         "*://www.tumblr.com/register?*",
         "*://www.tumblr.com/privacy/*"
       ],
-      "run_at": "document_end",
+      "run_at": "document_start",
       "js": [
         "browser_polyfill.js",
         "lib/jquery.slim.min.js",
+        "content_scripts/preload.js",
         "content_scripts/main.js"
       ],
       "css": [

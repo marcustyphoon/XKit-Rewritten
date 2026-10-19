@@ -1,5 +1,7 @@
 import { apiFetch } from './tumblr_helpers.js';
 
+performance.mark('xkit user');
+
 const [
   fetchedUserInfo,
   fetchedCommunitiesInfo,
@@ -13,6 +15,8 @@ const [
     return { response: [] };
   }),
 ]);
+
+performance.measure('xkit user');
 
 /**
  * {object?} userInfo - The contents of the /v2/user/info API endpoint
