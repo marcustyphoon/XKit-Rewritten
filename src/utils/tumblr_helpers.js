@@ -1,5 +1,7 @@
 import { inject } from './inject.js';
 
+performance.mark('xkit tumblr helpers');
+
 /**
  * @typedef {string | number | boolean | null | Json[] | { [key: string]: Json }} Json
  * @see https://www.typescriptlang.org/play/3-7/types-and-code-flow/recursive-type-references.ts.html

@@ -9,12 +9,20 @@
  * @property {HTMLStyleElement}     [styleElement] A style element constructed by the `buildStyle()` utility. Optional.
  */
 
+console.log('main.js');
+
 {
   const MAX_BOOT_ATTEMPTS = 3600; // 60 seconds on 60Hz displays; 10 seconds on 360Hz displays
 
   const enabledFeaturesKey = 'enabledScripts';
 
-  const redpop = [...document.scripts].some(({ src }) => src.includes('/pop/'));
+  const documentInteractive = new Promise(resolve =>
+    document.readyState === 'loading'
+      ? document.addEventListener('readystatechange', resolve, { once: true })
+      : resolve(),
+  );
+
+  const isRedpop = () => [...document.scripts].some(({ src }) => src.includes('/pop/'));
   const isReactLoaded = () => document.querySelector('[data-rh]') === null;
 
   const restartListeners = {};
@@ -133,6 +141,7 @@
   };
 
   const init = async function () {
+    performance.mark('xkit init');
     [...document.querySelectorAll('style.xkit, link.xkit')].forEach(element => element.remove());
 
     browser.storage.local.onChanged.addListener(onStorageChanged);
@@ -143,13 +152,19 @@
     ] = await Promise.all([
       importJson(browser.runtime.getURL('/features/index.json')),
       browser.storage.local.get(enabledFeaturesKey),
+      documentInteractive,
     ]);
+
+    if (!isRedpop()) return;
+    await waitForReactLoaded();
 
     /**
      * Fixes WebKit (Chromium, Safari) simultaneous import failure of files with unresolved top level await.
      * @see https://bugs.webkit.org/show_bug.cgi?id=242740
      */
-    await Promise.all(['css_map', 'language_data', 'user'].map(name => import(browser.runtime.getURL(`/utils/${name}.js`))));
+    Promise.all(['css_map', 'language_data', 'user'].map(name => import(browser.runtime.getURL(`/utils/${name}.js`))));
+
+    performance.measure('xkit init');
 
     runFeatures(installedFeatures.filter(name => enabledFeatures.includes(name)));
 
@@ -166,9 +181,5 @@
     throw new Error('XKit Rewritten boot failed; React did not load after 10+ seconds.');
   };
 
-  if (redpop) {
-    waitForReactLoaded()
-      .then(init)
-      .catch(console.error);
-  }
+  init().catch(console.error);
 }

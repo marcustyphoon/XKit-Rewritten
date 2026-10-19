@@ -11,6 +11,8 @@ const communitiesResource = '/v2/communities?mine=1';
 // This doesn't work on Chromium, where the same header can only tighten the scope of what to consider fresh.
 const options = { cache: 'default', headers: { 'Cache-Control': 'max-age=60' } };
 
+performance.mark('xkit user');
+
 const [
   fetchedUserInfo,
   fetchedCommunitiesInfo,
@@ -24,6 +26,8 @@ const [
     return { response: [] };
   }),
 ]);
+
+performance.measure('xkit user');
 
 /**
  * The contents of the `/v2/user/info` API endpoint
