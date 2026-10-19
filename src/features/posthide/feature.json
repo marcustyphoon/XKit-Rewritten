@@ -1,0 +1,9 @@
+{
+  "title": "PostHide",
+  "description": "Disappear a post temporarily",
+  "icon": {
+    "class_name": "ri-file-forbid-line",
+    "color": "white",
+    "background_color": "#000000"
+  }
+}
