@@ -30,15 +30,6 @@ class SponsorProgressElement extends CustomElement {
     this.#coverLinkElement = this.shadowRoot.getElementById('cover-link');
   }
 
-  /**
-   * @param {string} url A string or any other object with a stringifier that represents an absolute or relative URL.
-   * @param {string} [base] A string representing the base URL to use in cases where `url` is a relative URL.
-   * @returns {boolean} `true` if the URL can be parsed and is valid; `false` otherwise.
-   */
-  static canParseUrl (url, base) {
-    try { return !!new URL(url, base); } catch { return false; }
-  }
-
   async connectedCallback () {
     try {
       const response = await fetch('https://sponsors.aprilsylph.dev/');
@@ -56,7 +47,7 @@ class SponsorProgressElement extends CustomElement {
       this.#progressBarElement.style.width = `${percentComplete}%`;
 
       const { url } = data.sponsorsListing;
-      if (SponsorProgressElement.canParseUrl(url)) {
+      if (URL.canParse(url)) {
         this.#coverLinkElement.href = url;
       }
     } catch {
