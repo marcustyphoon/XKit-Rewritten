@@ -26,6 +26,8 @@ export default [
     semi: true,
   }),
 
+  { languageOptions: { ecmaVersion: 2025 } },
+
   /**
    * Enforce consistent use of trailing commas in object and array literals.
    * @see https://eslint.style/rules/comma-dangle
