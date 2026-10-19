@@ -77,14 +77,7 @@ export const showErrorModal = exception => {
  * @param {Callback} func A function
  * @returns {Callback} A version of the function with explicit error handling
  */
-export const withModalOnError = func =>
-  async (...args) => {
-    try {
-      return await func(...args);
-    } catch (exception) {
-      showErrorModal(exception);
-    }
-  };
+export const withModalOnError = func => (...args) => Promise.try(func, ...args).catch(showErrorModal);
 
 export const showContextInvalidatedModal = () =>
   showModal({

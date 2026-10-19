@@ -39,8 +39,10 @@ export function element (tagName, properties = {}, children = []) {
     ? document.createElementNS(properties.xmlns, tagName)
     : document.createElement(tagName);
 
-  const attributes = Object.entries(properties).filter(([key, value]) => typeof value !== 'function');
-  const events = Object.entries(properties).filter(([key, value]) => typeof value === 'function');
+  const { attributes = [], events = [] } = Object.groupBy(
+    Object.entries(properties),
+    ([key, value]) => typeof value === 'function' ? 'events' : 'attributes',
+  );
 
   element.replaceChildren(...children);
   attributes.forEach(([name, value]) => element.setAttribute(name, value));

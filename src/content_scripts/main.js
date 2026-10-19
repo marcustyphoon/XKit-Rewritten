@@ -112,13 +112,7 @@
     }
   };
 
-  const getInstalledFeatures = async function () {
-    const url = browser.runtime.getURL('/features/index.json');
-    const file = await fetch(url);
-    const installedFeatures = await file.json();
-
-    return installedFeatures;
-  };
+  const importJson = path => import(path, { with: { type: 'json' } }).then(module => module.default);
 
   /**
    * Shows an informative modal if the extension context is invalidated (e.g. after extension is autoupdated or manually disabled in Chromium). Should do nothing in Firefox, which stops running all extension context javascript immediately.
@@ -147,7 +141,7 @@
       installedFeatures,
       { [enabledFeaturesKey]: enabledFeatures = [] },
     ] = await Promise.all([
-      getInstalledFeatures(),
+      importJson(browser.runtime.getURL('/features/index.json')),
       browser.storage.local.get(enabledFeaturesKey),
     ]);
 
