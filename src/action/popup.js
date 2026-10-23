@@ -117,3 +117,12 @@ browser.permissions
 const params = new URLSearchParams(location.search);
 const pageIsEmbedded = params.get('embedded') === 'true';
 document.getElementById('embedded-banner').hidden = !pageIsEmbedded;
+
+const id = Math.random();
+const popupId = `popup ${id}`;
+const channel = new BroadcastChannel('xkit_test');
+channel.addEventListener('message', (event) => {
+  if (event.data.id === id) return;
+  const now = performance.timeOrigin + performance.now();
+  console.log(`${popupId} received message: ${event.data.message}. delay: ${now - event.data.now}`);
+});
