@@ -112,13 +112,7 @@
     }
   };
 
-  const getInstalledFeatures = async function () {
-    const url = browser.runtime.getURL('/features/index.json');
-    const file = await fetch(url);
-    const installedFeatures = await file.json();
-
-    return installedFeatures;
-  };
+  const importJson = path => import(path, { with: { type: 'json' } }).then(module => module.default);
 
   const initMainWorld = () => new Promise(resolve => {
     document.documentElement.addEventListener('xkit-injection-ready', resolve, { once: true });
@@ -159,7 +153,7 @@
       installedFeatures,
       { [enabledFeaturesKey]: enabledFeatures = [] },
     ] = await Promise.all([
-      getInstalledFeatures(),
+      importJson(browser.runtime.getURL('/features/index.json')),
       browser.storage.local.get(enabledFeaturesKey),
       initMainWorld(),
     ]);

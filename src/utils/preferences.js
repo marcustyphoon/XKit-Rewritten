@@ -1,12 +1,12 @@
+const importJson = path => import(path, { with: { type: 'json' } }).then(module => module.default);
+
 /**
  * Get all of a feature's preference values that are automatically registered by the "preferences" field in its feature.json metadata file.
  * @param {string} featureName Internal name of feature
  * @returns {Promise<object>} The feature's preference values
  */
 export const getPreferences = async function (featureName) {
-  const featureMetadataURL = browser.runtime.getURL(`/features/${featureName}/feature.json`);
-  const featureMetadataFile = await fetch(featureMetadataURL);
-  const { preferences = {} } = await featureMetadataFile.json();
+  const { preferences = {} } = await importJson(`../features/${featureName}/feature.json`);
   const storage = await browser.storage.local.get();
 
   const unsetPreferences = {};

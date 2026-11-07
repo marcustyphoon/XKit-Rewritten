@@ -1,3 +1,4 @@
+import installedFeatures from '../features/index.json' with { type: 'json' };
 import { CheckboxPreference } from './components/checkbox-preference/index.js';
 import { ColorPreference } from './components/color-preference/index.js';
 import { PercentPreference } from './components/percent-preference/index.js';
@@ -5,6 +6,8 @@ import { SelectPreference } from './components/select-preference/index.js';
 import { TextPreference } from './components/text-preference/index.js';
 import { TextAreaPreference } from './components/textarea-preference/index.js';
 import { XKitFeature } from './components/xkit-feature/index.js';
+
+const importJson = path => import(path, { with: { type: 'json' } }).then(module => module.default);
 
 const configPanel = document.getElementById('configuration-panel');
 const configTab = document.getElementById('configuration-tab');
@@ -28,30 +31,22 @@ const deprecatedIcon = new DOMParser().parseFromString(`
   </svg>
 `, 'image/svg+xml').firstElementChild;
 
-const getInstalledFeatures = async function () {
-  const url = browser.runtime.getURL('/features/index.json');
-  const file = await fetch(url);
-  const installedFeatures = await file.json();
-
-  return installedFeatures;
-};
-
 const renderFeatures = async function () {
   const featureElements = [];
 
-  const installedFeatures = await getInstalledFeatures();
   const {
     [enabledFeaturesKey]: enabledFeatures = [],
     [specialAccessKey]: specialAccess = [],
   } = await browser.storage.local.get();
 
-  const orderedEnabledFeatures = installedFeatures.filter(featureName => enabledFeatures.includes(featureName));
-  const disabledFeatures = installedFeatures.filter(featureName => enabledFeatures.includes(featureName) === false);
+  const { orderedEnabledFeatures = [], disabledFeatures = [] } = Object.groupBy(
+    installedFeatures,
+    featureName => enabledFeatures.includes(featureName) ? 'orderedEnabledFeatures' : 'disabledFeatures',
+  );
 
   for (const featureName of [...orderedEnabledFeatures, ...disabledFeatures]) {
-    const url = browser.runtime.getURL(`/features/${featureName}/feature.json`);
-    const file = await fetch(url);
-    const { title, description, icon, help, preferences, ...metadata } = await file.json();
+    const { title, description, icon, help, preferences, ...metadata } =
+      await importJson(`../features/${featureName}/feature.json`);
 
     const disabled = enabledFeatures.includes(featureName) === false;
     if (disabled && metadata.deprecated && !specialAccess.includes(featureName)) {
